@@ -3,40 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contas - Atelier Débora Freitas</title>
-  <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    #graficoContas {
-      max-width: 600px;
-      height: auto;
-      margin: 2rem auto;
-      display: block;
-    #graficoContas {
-      max-width: 600px;
-      height: auto;
-      margin: 2rem auto;
-      display: block;
+    body {
+      background: #0d2d0e;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
     }
+
+    section {
+      margin-top: 2rem;
+    }
+
+    input, select, button {
+      display: block;
+      margin: 0.5rem auto;
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    button {
+      background: #c7a17a;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #a87b51;
+    }
+
+    #graficoContas {
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+
     .voltar {
       display: inline-block;
-      margin: 2rem auto;
-      margin: 2rem auto;
+      margin-top: 2rem;
       padding: 10px 20px;
       background: #c7a17a;
       color: white;
-      border-radius: 6px;
-      color: white;
-      border-radius: 6px;
       text-decoration: none;
-      transition: background 0.3s;
+      border-radius: 6px;
     }
+
     .voltar:hover {
       background: #a87b51;
     }
@@ -49,8 +66,6 @@
     <h2>Cadastro de Conta</h2>
     <input id="descricaoConta" placeholder="Descrição" />
     <input type="number" id="valorConta" placeholder="Valor" />
-    <input id="descricaoConta" placeholder="Descrição" />
-    <input type="number" id="valorConta" placeholder="Valor" />
     <select id="tipoConta">
       <option value="pagar">A Pagar</option>
       <option value="receber">A Receber</option>
@@ -58,7 +73,6 @@
     <button onclick="registrarConta()">Registrar</button>
   </section>
 
-  <canvas id="graficoContas" width="400" height="300"></canvas>
   <canvas id="graficoContas" width="400" height="300"></canvas>
 
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
@@ -88,7 +102,6 @@
       const descricao = document.getElementById('descricaoConta').value;
       const valor = parseFloat(document.getElementById('valorConta').value);
       const tipo = document.getElementById('tipoConta').value;
-      if (!descricao || isNaN(valor)) return alert('Preencha todos os campos!');
       if (!descricao || isNaN(valor)) return alert('Preencha todos os campos!');
       const id = db.ref(`contas/${tipo}`).push().key;
       db.ref(`contas/${tipo}/${id}`).set({ descricao, valor, tipo });
