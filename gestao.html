@@ -12,31 +12,35 @@
   <style>
     body {
       font-family: 'Playfair Display', serif;
-      background: #0d2d0e;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
       color: #fff;
       text-align: center;
       padding: 2rem;
     }
     h1 {
-      color: #c7a17a;
+      color: #d4af7f;
       margin-bottom: 2rem;
     }
     canvas {
       max-width: 600px;
       margin: 0 auto;
+      background: #1c1c1c;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(212, 175, 127, 0.3);
     }
     .voltar {
       margin-top: 2rem;
       display: inline-block;
       padding: 10px 20px;
-      background: #c7a17a;
+      background: #d4af7f;
       color: #fff;
       text-decoration: none;
       border-radius: 6px;
       transition: background 0.3s;
     }
     .voltar:hover {
-      background: #a87b51;
+      background: #b08d57;
     }
   </style>
 </head>
@@ -55,7 +59,6 @@
       appId: "1:1234567890:web:321abc456def7890"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.database();
 
     let chart;
@@ -77,6 +80,7 @@
 
         const ctx = document.getElementById('graficoGestao').getContext('2d');
         if (chart) chart.destroy();
+
         chart = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -84,16 +88,52 @@
             datasets: [{
               label: 'Projetos',
               data: data,
-              backgroundColor: ['#f39c12', '#2980b9']
+              backgroundColor: ['#d4af7f', '#6ab04c'],
+              borderRadius: 8,
+              barPercentage: 0.5
             }]
           },
           options: {
-            animation: true,
+            responsive: true,
+            animation: {
+              duration: 1000,
+              easing: 'easeOutQuart'
+            },
             plugins: {
-              legend: { display: false }
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#333',
+                titleColor: '#fff',
+                bodyColor: '#d4af7f',
+                borderColor: '#c7a17a',
+                borderWidth: 1
+              }
             },
             scales: {
-              y: { beginAtZero: true, ticks: { precision: 0 } }
+              x: {
+                ticks: {
+                  color: '#fff',
+                  font: {
+                    family: 'Playfair Display',
+                    size: 16,
+                    weight: 'bold'
+                  }
+                },
+                grid: { color: '#2c3e50' }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1,
+                  color: '#fff',
+                  font: {
+                    family: 'Playfair Display',
+                    size: 16,
+                    weight: 'bold'
+                  }
+                },
+                grid: { color: '#2c3e50' }
+              }
             }
           }
         });
@@ -102,23 +142,15 @@
       });
     }
 
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        alert('Você precisa estar logado.');
-        window.location.href = 'index.html';
-        return;
-      }
-
+    desenharGrafico(filtroAtual);
+    setInterval(() => {
+      filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
       desenharGrafico(filtroAtual);
-      setInterval(() => {
-        filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
-        desenharGrafico(filtroAtual);
-      }, 5000);
+    }, 5000);
 
-      db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
-      db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
-      db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
-    });
+    db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
+    db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
+    db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
   </script>
 </body>
 </html>
