@@ -3,37 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contas - Atelier Débora Freitas</title>
+  <title>Contas - Ateliê Débora Freitas</title>
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    #graficoContas {
-      max-width: 600px;
-      height: auto;
-      margin: 2rem auto;
-      display: block;
-    }
-    .voltar {
-      display: inline-block;
-      margin: 2rem auto;
-      padding: 10px 20px;
-      background: #c7a17a;
-      color: white;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: background 0.3s;
-    }
-    .voltar:hover {
-      background: #a87b51;
-    }
+    #graficoContas { max-width: 600px; margin: 2rem auto; display: block; }
+    .voltar { display: inline-block; margin: 2rem auto; padding: 10px 20px;
+      background: #c7a17a; color: white; border-radius: 6px;
+      text-decoration: none; transition: background 0.3s; }
+    .voltar:hover { background: #a87b51; }
   </style>
 </head>
 <body>
   <h1>Contas</h1>
-
   <section>
     <h2>Cadastro de Conta</h2>
     <input id="descricaoConta" placeholder="Descrição" />
@@ -49,8 +39,9 @@
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
   <script>
+    // Firebase config e inicialização
     const firebaseConfig = {
-      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      apiKey: "AIzaSyDQr7d8...",
       authDomain: "erp-atelier-debora.firebaseapp.com",
       databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
       projectId: "erp-atelier-debora",
@@ -60,9 +51,11 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
+    // Verifica permissão de acesso
     auth.onAuthStateChanged(user => {
-      if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
-        alert('Acesso restrito. Redirecionando para o início.');
+      if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com'
+            && user.email !== 'linhadeourobydebora@gmail.com')) {
+        alert('Acesso restrito. Redirecionando...');
         window.location = 'home.html';
         return;
       }
@@ -83,18 +76,17 @@
     }
 
     function carregarGraficoContas() {
-      let pagar = 0;
-      let receber = 0;
-
+      let pagar = 0, receber = 0;
       Promise.all([
         db.ref('contas/pagar').once('value'),
         db.ref('contas/receber').once('value')
       ]).then(([snapPagar, snapReceber]) => {
-        snapPagar.forEach(c => pagar += parseFloat(c.val().valor || 0));
-        snapReceber.forEach(c => receber += parseFloat(c.val().valor || 0));
+        snapPagar.forEach(c => pagar += parseFloat(c.val().valor) || 0);
+        snapReceber.forEach(c => receber += parseFloat(c.val().valor) || 0);
 
         const ctx = document.getElementById('graficoContas').getContext('2d');
         if (window.graficoContas) window.graficoContas.destroy();
+
         window.graficoContas = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -108,9 +100,7 @@
           options: {
             responsive: true,
             scales: {
-              y: {
-                beginAtZero: true
-              }
+              y: { beginAtZero: true }
             }
           }
         });
