@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estoque - Ateliê Débora Freitas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    .voltar {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 10px 20px;
+      background: #c7a17a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .voltar:hover {
+      background: #a87b51;
+    }
+  </style>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
+      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+      projectId: "erp-atelier-debora",
+      appId: "1:1234567890:web:321abc456def7890"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) window.location = 'index.html';
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Estoque</h1>
+    <button onclick="logout()">Sair</button>
+  </header>
+
+  <main>
+    <section class="grafico">
+      <h2>Estoque de Produtos</h2>
+      <canvas id="graficoProdutos" height="150"></canvas>
+    </section>
+    <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+  </main>
+
+  <script>
+    function logout() {
+      auth.signOut();
+    }
+
+    db.ref('produtos').once('value').then(snapshot => {
+      const labels = [];
+      const dados = [];
+      snapshot.forEach(p => {
+        const d = p.val();
+        labels.push(d.nome);
+        dados.push(d.estoque);
+      });
+
+      new Chart(document.getElementById('graficoProdutos'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Estoque',
+            data: dados,
+            backgroundColor: '#c7a17a'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saída de Estoque - Atelier Débora Freitas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Playfair Display', serif;
+      background-color: #0d2d0e;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1, h2 {
+      color: #c7a17a;
+    }
+    input, select, button {
+      margin: 0.5rem;
+      padding: 0.6rem;
+      border-radius: 4px;
+      border: none;
+    }
+    select, input {
+      width: 220px;
+    }
+    button {
+      background-color: #c7a17a;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a87b51;
+    }
+    .voltar {
+      margin-top: 2rem;
+      display: inline-block;
+      padding: 10px 20px;
+      background: #c7a17a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .voltar:hover {
+      background: #a87b51;
+    }
+  </style>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
+      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+      projectId: "erp-atelier-debora",
+      appId: "1:1234567890:web:321abc456def7890"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    let produtosMap = {};
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return window.location = 'index.html';
+      carregarProdutos();
+    });
+
+    function carregarProdutos() {
+      const select = document.getElementById('produto');
+      db.ref('produtos').once('value').then(snap => {
+        select.innerHTML = '<option value="">Selecione</option>';
+        snap.forEach(p => {
+          const id = p.key;
+          const d = p.val();
+          produtosMap[id] = d;
+          select.innerHTML += `<option value="${id}">${d.nome} (Estoque: ${d.estoque})</option>`;
+        });
+      });
+    }
+
+    function registrarSaida() {
+      const produtoId = document.getElementById('produto').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+      if (!produtoId || isNaN(quantidade)) return alert("Preencha os dados corretamente.");
+
+      const produto = produtosMap[produtoId];
+      if (quantidade > produto.estoque) return alert("Estoque insuficiente.");
+
+      const novoEstoque = produto.estoque - quantidade;
+      db.ref('produtos/' + produtoId).update({ estoque: novoEstoque });
+      alert("Saída registrada com sucesso!");
+      carregarProdutos();
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Saída de Produtos</h1>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Registrar Baixa no Estoque</h2>
+    <select id="produto"></select>
+    <input type="number" id="quantidade" placeholder="Quantidade para saída">
+    <button onclick="registrarSaida()">Registrar Saída</button>
+    <br>
+    <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+  </main>
+  <footer>
+    &copy; 2025 Atelier Débora Freitas
+  </footer>
+</body>
+</html>

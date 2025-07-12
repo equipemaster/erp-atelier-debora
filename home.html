@@ -1,0 +1,103 @@
+<!DOCTYPE html> 
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Início - Atelier Débora Freitas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
+      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+      projectId: "erp-atelier-debora",
+      appId: "1:1234567890:web:321abc456def7890"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) window.location = 'index.html';
+    });
+
+    function logout() {
+      auth.signOut();
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Playfair Display', serif;
+      background-color: #0d2d0e;
+      color: #fff;
+      margin: 0;
+      text-align: center;
+    }
+    header {
+      background-color: #1c3b1d;
+      padding: 1rem 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    header h1 {
+      color: #c9a064;
+      margin: 0;
+    }
+    nav {
+      margin: 2rem 0;
+    }
+    nav a {
+      display: inline-block;
+      margin: 1rem;
+      padding: 0.75rem 1.5rem;
+      background-color: #c9a064;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background-color: #b38757;
+    }
+    footer {
+      background-color: #133f14;
+      padding: 1rem;
+      color: #ccc;
+      margin-top: 4rem;
+    }
+    .logout-btn {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      padding: 6px 12px;
+      border: none;
+      background: #b38757;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ateliê Débora Freitas</h1>
+    <button onclick="logout()" class="logout-btn">Sair</button>
+  </header>
+
+  <main>
+    <h2>Bem-vindo ao seu ERP</h2>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="contas.html">Contas</a>
+      <a href="projetos.html">Projetos</a>
+      <a href="saida.html">Saída de Estoque</a>
+      <a href="gestao.html">Gestão à Vista</a>
+    </nav>
+  </main>
+
+  <footer>
+    &copy; 2025 Ateliê Débora Freitas. Todos os direitos reservados.
+  </footer>
+</body>
+</html>

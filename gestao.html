@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão à Vista - Projetos</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Playfair Display', serif;
+      background: #0d2d0e;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #c7a17a;
+      margin-bottom: 2rem;
+    }
+    canvas {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .voltar {
+      margin-top: 2rem;
+      display: inline-block;
+      padding: 10px 20px;
+      background: #c7a17a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .voltar:hover {
+      background: #a87b51;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gestão à Vista - Projetos</h1>
+  <canvas id="graficoGestao"></canvas>
+  <br>
+  <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
+      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+      projectId: "erp-atelier-debora",
+      appId: "1:1234567890:web:321abc456def7890"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let chart;
+
+    function desenharGrafico(statusFiltro) {
+      db.ref('projetos').once('value').then(snapshot => {
+        let andamento = 0;
+        let finalizado = 0;
+        snapshot.forEach(p => {
+          const status = p.val().status.toLowerCase();
+          if (status.includes('finaliz')) finalizado++;
+          else andamento++;
+        });
+
+        const data = statusFiltro === 'finalizado'
+          ? [0, finalizado]
+          : [andamento, 0];
+
+        const ctx = document.getElementById('graficoGestao').getContext('2d');
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Em Andamento', 'Finalizados'],
+            datasets: [{
+              label: 'Projetos',
+              data: data,
+              backgroundColor: ['#f39c12', '#2980b9']
+            }]
+          },
+          options: {
+            animation: true,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+          }
+        });
+      });
+    }
+
+    let filtroAtual = 'andamento';
+    desenharGrafico(filtroAtual);
+
+    setInterval(() => {
+      filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
+      desenharGrafico(filtroAtual);
+    }, 5000);
+
+    // Atualização em tempo real ao alterar status
+    db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
+    db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
+    db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
+  </script>
+</body>
+</html>

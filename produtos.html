@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos - Ateliê Débora Freitas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Playfair Display', serif;
+      background-color: #0d2d0e;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1, h2 {
+      color: #c7a17a;
+    }
+    input, button {
+      margin: 0.5rem;
+      padding: 0.6rem;
+      border-radius: 4px;
+      border: none;
+    }
+    input {
+      width: 200px;
+    }
+    button {
+      background-color: #c7a17a;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a87b51;
+    }
+    .voltar {
+      margin-top: 2rem;
+      display: inline-block;
+      padding: 10px 20px;
+      background: #c7a17a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .voltar:hover {
+      background: #a87b51;
+    }
+  </style>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
+      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+      projectId: "erp-atelier-debora",
+      appId: "1:1234567890:web:321abc456def7890"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) window.location = 'index.html';
+    });
+
+    function cadastrarProduto() {
+      const nome = document.getElementById('nomeProduto').value.trim();
+      const estoque = parseInt(document.getElementById('estoqueProduto').value);
+      if (!nome || isNaN(estoque)) return alert('Preencha!');
+
+      db.ref('produtos').once('value').then(snapshot => {
+        let duplicado = false;
+        snapshot.forEach(p => {
+          if (p.val().nome.toLowerCase() === nome.toLowerCase()) {
+            duplicado = true;
+          }
+        });
+        if (duplicado) {
+          alert('Produto já cadastrado!');
+        } else {
+          const id = db.ref('produtos').push().key;
+          db.ref('produtos/' + id).set({ nome, estoque });
+          document.getElementById('nomeProduto').value = '';
+          document.getElementById('estoqueProduto').value = '';
+          carregarProdutos();
+        }
+      });
+    }
+
+    function carregarProdutos() {
+      db.ref('produtos').once('value').then(s => {
+        const c = document.getElementById('lista-produtos');
+        c.innerHTML = '';
+        s.forEach(p => {
+          const d = p.val();
+          c.innerHTML += `<div>${d.nome} – ${d.estoque}</div>`;
+        });
+      });
+    }
+
+    window.onload = carregarProdutos;
+  </script>
+</head>
+<body>
+  <h1>Cadastro de Produtos</h1>
+  <input id="nomeProduto" placeholder="Nome do produto">
+  <input type="number" id="estoqueProduto" placeholder="Quantidade">
+  <button onclick="cadastrarProduto()">Cadastrar</button>
+
+  <h2>Lista de Produtos</h2>
+  <div id="lista-produtos"></div>
+
+  <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+</body>
+</html>
