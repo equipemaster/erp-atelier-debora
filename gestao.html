@@ -12,35 +12,36 @@
   <style>
     body {
       font-family: 'Playfair Display', serif;
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      background: linear-gradient(135deg, #0d2d0e, #153d4f);
       color: #fff;
       text-align: center;
       padding: 2rem;
     }
     h1 {
-      color: #d4af7f;
+      color: #c7a17a;
       margin-bottom: 2rem;
+      font-size: 2rem;
     }
     canvas {
       max-width: 600px;
       margin: 0 auto;
-      background: #1c1c1c;
-      padding: 1rem;
+      background: #111;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(212, 175, 127, 0.3);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+      padding: 1rem;
     }
     .voltar {
       margin-top: 2rem;
       display: inline-block;
       padding: 10px 20px;
-      background: #d4af7f;
+      background: #c7a17a;
       color: #fff;
       text-decoration: none;
       border-radius: 6px;
       transition: background 0.3s;
     }
     .voltar:hover {
-      background: #b08d57;
+      background: #a87b51;
     }
   </style>
 </head>
@@ -62,14 +63,13 @@
     const db = firebase.database();
 
     let chart;
-    let filtroAtual = 'andamento';
 
     function desenharGrafico(statusFiltro) {
       db.ref('projetos').once('value').then(snapshot => {
         let andamento = 0;
         let finalizado = 0;
         snapshot.forEach(p => {
-          const status = p.val().status?.toLowerCase() || '';
+          const status = p.val().status.toLowerCase();
           if (status.includes('finaliz')) finalizado++;
           else andamento++;
         });
@@ -80,7 +80,6 @@
 
         const ctx = document.getElementById('graficoGestao').getContext('2d');
         if (chart) chart.destroy();
-
         chart = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -88,9 +87,9 @@
             datasets: [{
               label: 'Projetos',
               data: data,
-              backgroundColor: ['#d4af7f', '#6ab04c'],
+              backgroundColor: ['#f39c12', '#2980b9'],
               borderRadius: 8,
-              barPercentage: 0.5
+              hoverBackgroundColor: ['#f1c40f', '#3498db']
             }]
           },
           options: {
@@ -100,48 +99,44 @@
               easing: 'easeOutQuart'
             },
             plugins: {
-              legend: { display: false },
+              legend: {
+                display: false
+              },
               tooltip: {
-                backgroundColor: '#333',
-                titleColor: '#fff',
-                bodyColor: '#d4af7f',
-                borderColor: '#c7a17a',
-                borderWidth: 1
+                backgroundColor: '#2c3e50',
+                titleColor: '#ecf0f1',
+                bodyColor: '#ecf0f1',
+                padding: 12,
+                borderWidth: 1,
+                borderColor: '#c7a17a'
               }
             },
             scales: {
-              x: {
-                ticks: {
-                  color: '#fff',
-                  font: {
-                    family: 'Playfair Display',
-                    size: 16,
-                    weight: 'bold'
-                  }
-                },
-                grid: { color: '#2c3e50' }
-              },
               y: {
                 beginAtZero: true,
                 ticks: {
-                  stepSize: 1,
-                  color: '#fff',
-                  font: {
-                    family: 'Playfair Display',
-                    size: 16,
-                    weight: 'bold'
-                  }
+                  precision: 0,
+                  color: '#fff'
                 },
-                grid: { color: '#2c3e50' }
+                grid: {
+                  color: 'rgba(255,255,255,0.1)'
+                }
+              },
+              x: {
+                ticks: {
+                  color: '#fff'
+                },
+                grid: {
+                  color: 'rgba(255,255,255,0.05)'
+                }
               }
             }
           }
         });
-      }).catch(error => {
-        console.error("Erro ao carregar dados:", error);
       });
     }
 
+    let filtroAtual = 'andamento';
     desenharGrafico(filtroAtual);
     setInterval(() => {
       filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
