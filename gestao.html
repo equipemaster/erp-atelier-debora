@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestão à Vista – Projetos em Andamento x Finalizado</title>
+  <title>Gestão à Vista - Projetos</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -11,137 +11,142 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
-      font-family: 'Playfair Display', serif;
-      background: linear-gradient(135deg, #0d2d0e, #153d4f);
-      color: #fff;
-      text-align: center;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #002e1f, #04303e);
+      color: #f8f8f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 2rem;
+      min-height: 100vh;
     }
+
     h1 {
-      color: #c7a17a;
       font-size: 2rem;
+      color: #d4af7f;
       margin-bottom: 2rem;
+      text-shadow: 1px 1px 4px #000;
     }
+
     canvas {
       max-width: 600px;
-      width: 100%;
-      height: 350px;
-      background: #111;
+      background: #0d0d0d;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
-      margin: auto;
-      display: block;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+      padding: 1rem;
+      margin-bottom: 2rem;
+      transition: transform 0.4s ease;
     }
+
+    canvas:hover {
+      transform: scale(1.03);
+    }
+
     .voltar {
-      margin-top: 2rem;
-      display: inline-block;
-      padding: 10px 20px;
-      background: #c7a17a;
-      color: #fff;
+      background-color: #d4af7f;
+      color: #000;
       text-decoration: none;
+      padding: 10px 24px;
       border-radius: 6px;
-      transition: background 0.3s;
+      font-weight: bold;
+      transition: background 0.3s ease;
     }
+
     .voltar:hover {
-      background: #a87b51;
+      background-color: #b38e5d;
     }
   </style>
 </head>
 <body>
-  <h1>Gestão à Vista – Projetos</h1>
+  <h1>Gestão à Vista - Projetos</h1>
   <canvas id="graficoGestao"></canvas>
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
   <script>
-   const firebaseConfig = {
-  apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
-  authDomain: "erp-atelier-debora.firebaseapp.com",
-  databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
-  projectId: "erp-atelier-debora",
-  appId: "1:1234567890:web:321abc456def7890"
-};
-
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
+      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+      projectId: "erp-atelier-debora",
+      appId: "1:1234567890:web:321abc456def7890"
     };
+
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.database();
 
-    auth.onAuthStateChanged(user => {
-      if (!user) return window.location = 'index.html';
-      initChart();
-    });
+    let chart;
+    let filtroAtual = 'andamento';
 
-    let chart = null;
-
-    function initChart() {
-      updateChart('andamento');
-      setInterval(() => {
-        const next = (chart.currentData === 'andamento') ? 'finalizado' : 'andamento';
-        updateChart(next);
-      }, 5000);
-
-      db.ref('projetos').on('value', () => {
-        // Quando dados são alterados, re-desenha com filtro atual
-        if (chart && chart.currentData) updateChart(chart.currentData);
-      });
-    }
-
-    function updateChart(filtro) {
+    function desenharGrafico(filtro) {
       db.ref('projetos').once('value').then(snapshot => {
         let andamento = 0, finalizado = 0;
+
         snapshot.forEach(p => {
-          const s = (p.val().status || '').toLowerCase();
-          s.includes('finaliz') ? finalizado++ : andamento++;
+          const status = (p.val().status || '').toLowerCase();
+          if (status.includes('finaliz')) finalizado++;
+          else andamento++;
         });
-        const dataArr = (filtro === 'finalizado') ? [0, finalizado] : [andamento, 0];
-        renderChart(dataArr);
-        chart.currentData = filtro;
+
+        const data = filtro === 'finalizado'
+          ? [0, finalizado]
+          : [andamento, 0];
+
+        const ctx = document.getElementById('graficoGestao').getContext('2d');
+        if (chart) chart.destroy();
+
+        chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Em Andamento', 'Finalizados'],
+            datasets: [{
+              label: 'Projetos',
+              data,
+              backgroundColor: ['#f39c12', '#27ae60'],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            animation: {
+              duration: 800,
+              easing: 'easeOutBounce'
+            },
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0,
+                  color: '#fff'
+                },
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                }
+              },
+              x: {
+                ticks: { color: '#fff' },
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                }
+              }
+            }
+          }
+        });
       });
     }
 
-    function renderChart(dataArr) {
-      const ctx = document.getElementById('graficoGestao').getContext('2d');
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Em Andamento', 'Finalizados'],
-          datasets: [{
-            label: 'Projetos',
-            data: dataArr,
-            backgroundColor: ['#f39c12', '#2980b9'],
-            borderRadius: 8,
-            hoverBackgroundColor: ['#f1c40f', '#3498db']
-          }]
-        },
-        options: {
-          responsive: true,
-          animation: { duration: 1000, easing: 'easeOutQuart' },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#2c3e50',
-              titleColor: '#ecf0f1',
-              bodyColor: '#ecf0f1',
-              padding: 12,
-              borderWidth: 1,
-              borderColor: '#c7a17a'
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { precision: 0, color: '#fff' },
-              grid: { color: 'rgba(255,255,255,0.1)' }
-            },
-            x: {
-              ticks: { color: '#fff' },
-              grid: { color: 'rgba(255,255,255,0.05)' }
-            }
-          }
-        }
-      });
-    }
+    desenharGrafico(filtroAtual);
+
+    setInterval(() => {
+      filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
+      desenharGrafico(filtroAtual);
+    }, 5000);
+
+    db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
+    db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
+    db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
   </script>
 </body>
 </html>
