@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestão à Vista - Projetos</title>
+  <title>Gestão à Vista – Projetos em Andamento x Finalizado</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -19,16 +19,18 @@
     }
     h1 {
       color: #c7a17a;
-      margin-bottom: 2rem;
       font-size: 2rem;
+      margin-bottom: 2rem;
     }
     canvas {
       max-width: 600px;
-      margin: 0 auto;
+      width: 100%;
+      height: 350px;
       background: #111;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-      padding: 1rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      margin: auto;
+      display: block;
     }
     .voltar {
       margin-top: 2rem;
@@ -46,106 +48,98 @@
   </style>
 </head>
 <body>
-  <h1>Gestão à Vista - Projetos</h1>
+  <h1>Gestão à Vista – Projetos</h1>
   <canvas id="graficoGestao"></canvas>
-  <br>
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
-      authDomain: "erp-atelier-debora.firebaseapp.com",
-      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
-      projectId: "erp-atelier-debora",
-      appId: "1:1234567890:web:321abc456def7890"
+      apiKey: "...",
+      authDomain: "...",
+      databaseURL: "...",
+      projectId: "...",
+      appId: "..."
     };
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
-    let chart;
+    auth.onAuthStateChanged(user => {
+      if (!user) return window.location = 'index.html';
+      initChart();
+    });
 
-    function desenharGrafico(statusFiltro) {
-      db.ref('projetos').once('value').then(snapshot => {
-        let andamento = 0;
-        let finalizado = 0;
-        snapshot.forEach(p => {
-          const status = p.val().status.toLowerCase();
-          if (status.includes('finaliz')) finalizado++;
-          else andamento++;
-        });
+    let chart = null;
 
-        const data = statusFiltro === 'finalizado'
-          ? [0, finalizado]
-          : [andamento, 0];
+    function initChart() {
+      updateChart('andamento');
+      setInterval(() => {
+        const next = (chart.currentData === 'andamento') ? 'finalizado' : 'andamento';
+        updateChart(next);
+      }, 5000);
 
-        const ctx = document.getElementById('graficoGestao').getContext('2d');
-        if (chart) chart.destroy();
-        chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Em Andamento', 'Finalizados'],
-            datasets: [{
-              label: 'Projetos',
-              data: data,
-              backgroundColor: ['#f39c12', '#2980b9'],
-              borderRadius: 8,
-              hoverBackgroundColor: ['#f1c40f', '#3498db']
-            }]
-          },
-          options: {
-            responsive: true,
-            animation: {
-              duration: 1000,
-              easing: 'easeOutQuart'
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                backgroundColor: '#2c3e50',
-                titleColor: '#ecf0f1',
-                bodyColor: '#ecf0f1',
-                padding: 12,
-                borderWidth: 1,
-                borderColor: '#c7a17a'
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  precision: 0,
-                  color: '#fff'
-                },
-                grid: {
-                  color: 'rgba(255,255,255,0.1)'
-                }
-              },
-              x: {
-                ticks: {
-                  color: '#fff'
-                },
-                grid: {
-                  color: 'rgba(255,255,255,0.05)'
-                }
-              }
-            }
-          }
-        });
+      db.ref('projetos').on('value', () => {
+        // Quando dados são alterados, re-desenha com filtro atual
+        if (chart && chart.currentData) updateChart(chart.currentData);
       });
     }
 
-    let filtroAtual = 'andamento';
-    desenharGrafico(filtroAtual);
-    setInterval(() => {
-      filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
-      desenharGrafico(filtroAtual);
-    }, 5000);
+    function updateChart(filtro) {
+      db.ref('projetos').once('value').then(snapshot => {
+        let andamento = 0, finalizado = 0;
+        snapshot.forEach(p => {
+          const s = (p.val().status || '').toLowerCase();
+          s.includes('finaliz') ? finalizado++ : andamento++;
+        });
+        const dataArr = (filtro === 'finalizado') ? [0, finalizado] : [andamento, 0];
+        renderChart(dataArr);
+        chart.currentData = filtro;
+      });
+    }
 
-    db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
-    db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
-    db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
+    function renderChart(dataArr) {
+      const ctx = document.getElementById('graficoGestao').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Em Andamento', 'Finalizados'],
+          datasets: [{
+            label: 'Projetos',
+            data: dataArr,
+            backgroundColor: ['#f39c12', '#2980b9'],
+            borderRadius: 8,
+            hoverBackgroundColor: ['#f1c40f', '#3498db']
+          }]
+        },
+        options: {
+          responsive: true,
+          animation: { duration: 1000, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#2c3e50',
+              titleColor: '#ecf0f1',
+              bodyColor: '#ecf0f1',
+              padding: 12,
+              borderWidth: 1,
+              borderColor: '#c7a17a'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, color: '#fff' },
+              grid: { color: 'rgba(255,255,255,0.1)' }
+            },
+            x: {
+              ticks: { color: '#fff' },
+              grid: { color: 'rgba(255,255,255,0.05)' }
+            }
+          }
+        }
+      });
+    }
   </script>
 </body>
 </html>
