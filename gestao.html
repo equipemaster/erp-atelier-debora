@@ -61,37 +61,19 @@
     let chart;
     let filtroAtual = 'andamento';
 
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        alert('Acesso negado. Redirecionando...');
-        window.location = 'index.html';
-        return;
-      }
-
-      desenharGrafico(filtroAtual);
-
-      setInterval(() => {
-        filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
-        desenharGrafico(filtroAtual);
-      }, 5000);
-
-      db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
-      db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
-      db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
-    });
-
     function desenharGrafico(statusFiltro) {
       db.ref('projetos').once('value').then(snapshot => {
         let andamento = 0;
         let finalizado = 0;
-
         snapshot.forEach(p => {
-          const status = (p.val().status || '').toLowerCase();
+          const status = p.val().status?.toLowerCase() || '';
           if (status.includes('finaliz')) finalizado++;
           else andamento++;
         });
 
-        const data = statusFiltro === 'finalizado' ? [0, finalizado] : [andamento, 0];
+        const data = statusFiltro === 'finalizado'
+          ? [0, finalizado]
+          : [andamento, 0];
 
         const ctx = document.getElementById('graficoGestao').getContext('2d');
         if (chart) chart.destroy();
@@ -101,19 +83,42 @@
             labels: ['Em Andamento', 'Finalizados'],
             datasets: [{
               label: 'Projetos',
-              data,
+              data: data,
               backgroundColor: ['#f39c12', '#2980b9']
             }]
           },
           options: {
-            responsive: true,
             animation: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
           }
         });
+      }).catch(error => {
+        console.error("Erro ao carregar dados:", error);
       });
     }
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        alert('Você precisa estar logado.');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      desenharGrafico(filtroAtual);
+      setInterval(() => {
+        filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
+        desenharGrafico(filtroAtual);
+      }, 5000);
+
+      db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
+      db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
+      db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
+    });
   </script>
 </body>
 </html>
