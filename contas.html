@@ -16,9 +16,16 @@
 
   <style>
     #graficoContas { max-width: 600px; margin: 2rem auto; display: block; }
-    .voltar { display: inline-block; margin: 2rem auto; padding: 10px 20px;
-      background: #c7a17a; color: white; border-radius: 6px;
-      text-decoration: none; transition: background 0.3s; }
+    .voltar {
+      display: inline-block;
+      margin: 2rem auto;
+      padding: 10px 20px;
+      background: #c7a17a;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
     .voltar:hover { background: #a87b51; }
   </style>
 </head>
@@ -39,7 +46,6 @@
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
   <script>
-    // Firebase config e inicialização
     const firebaseConfig = {
       apiKey: "AIzaSyDQr7d8...",
       authDomain: "erp-atelier-debora.firebaseapp.com",
@@ -47,18 +53,30 @@
       projectId: "erp-atelier-debora",
       appId: "1:1234567890:web:321abc456def7890"
     };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // Verifica permissão de acesso
     auth.onAuthStateChanged(user => {
-      if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com'
-            && user.email !== 'linhadeourobydebora@gmail.com')) {
-        alert('Acesso restrito. Redirecionando...');
-        window.location = 'home.html';
+      if (!user) {
+        alert('Você precisa estar logado.');
+        window.location = 'index.html';
         return;
       }
+
+      const autorizados = [
+        'marneysamuellaraujo2@gmail.com',
+        'linhadeourobydebora@gmail.com'
+      ];
+
+      if (!autorizados.includes(user.email)) {
+        alert('Acesso restrito.');
+        window.location = 'index.html';
+        return;
+      }
+
+      // Usuário autorizado
       carregarGraficoContas();
     });
 
@@ -66,23 +84,31 @@
       const descricao = document.getElementById('descricaoConta').value;
       const valor = parseFloat(document.getElementById('valorConta').value);
       const tipo = document.getElementById('tipoConta').value;
-      if (!descricao || isNaN(valor)) return alert('Preencha todos os campos!');
+
+      if (!descricao || isNaN(valor)) {
+        alert('Preencha todos os campos!');
+        return;
+      }
+
       const id = db.ref(`contas/${tipo}`).push().key;
       db.ref(`contas/${tipo}/${id}`).set({ descricao, valor, tipo });
+
       document.getElementById('descricaoConta').value = '';
       document.getElementById('valorConta').value = '';
       document.getElementById('tipoConta').value = 'pagar';
+
       carregarGraficoContas();
     }
 
     function carregarGraficoContas() {
       let pagar = 0, receber = 0;
+
       Promise.all([
         db.ref('contas/pagar').once('value'),
         db.ref('contas/receber').once('value')
       ]).then(([snapPagar, snapReceber]) => {
-        snapPagar.forEach(c => pagar += parseFloat(c.val().valor) || 0);
-        snapReceber.forEach(c => receber += parseFloat(c.val().valor) || 0);
+        snapPagar.forEach(c => pagar += parseFloat(c.val().valor || 0));
+        snapReceber.forEach(c => receber += parseFloat(c.val().valor || 0));
 
         const ctx = document.getElementById('graficoContas').getContext('2d');
         if (window.graficoContas) window.graficoContas.destroy();
