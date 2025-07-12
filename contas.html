@@ -32,7 +32,6 @@
 </head>
 <body>
   <h1>Contas</h1>
-
   <section>
     <h2>Cadastro de Conta</h2>
     <input id="descricaoConta" placeholder="Descrição" />
@@ -60,24 +59,11 @@
     const db = firebase.database();
 
     auth.onAuthStateChanged(user => {
-      if (!user) {
-        alert('Você precisa estar logado.');
-        window.location = 'index.html';
+      if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
+        alert('Acesso restrito. Redirecionando...');
+        window.location = 'home.html';
         return;
       }
-
-      const email = user.email || '';
-      const autorizados = [
-        'marneysamuellaraujo2@gmail.com',
-        'linhadeourobydebora@gmail.com'
-      ];
-
-      if (!autorizados.includes(email)) {
-        alert('Acesso restrito.');
-        window.location = 'index.html';
-        return;
-      }
-
       carregarGraficoContas();
     });
 
@@ -104,7 +90,9 @@
         snapReceber.forEach(c => receber += parseFloat(c.val().valor) || 0);
 
         const ctx = document.getElementById('graficoContas').getContext('2d');
-        if (window.graficoContas) window.graficoContas.destroy();
+        if (window.graficoContas && typeof window.graficoContas.destroy === 'function') {
+          window.graficoContas.destroy();
+        }
 
         window.graficoContas = new Chart(ctx, {
           type: 'bar',
