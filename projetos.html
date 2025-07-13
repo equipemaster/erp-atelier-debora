@@ -27,7 +27,7 @@
     <select id="tipoProjeto">
       <option disabled selected>-- Selecione o tipo --</option>
       <option>Noiva - Sob Medida</option>
-      <option>Noiva - Locação</option>
+      <option>Noiva - Locacao</option>
       <option>Festa - Sob Medida</option>
       <option>Casual</option>
     </select>
@@ -35,10 +35,11 @@
   </div>
   <div id="kanban"></div>
   <div id="alertas"></div>
+
   <script>
     const firebaseConfig = {
       apiKey: "SUA_APIKEY",
-      authDomain: "SEU_AUTH_DOMAIN",
+      authDomain: "erp-atelier-debora.firebaseapp.com",
       databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
       projectId: "erp-atelier-debora",
       appId: "SEU_APP_ID"
@@ -59,12 +60,17 @@
     });
 
     function cadastrarProjeto() {
-      const nome = document.getElementById('nomeProjeto').value;
-      const status = document.getElementById('statusInicial').value;
+      const nome = document.getElementById('nomeProjeto').value.trim();
+      const status = document.getElementById('statusInicial').value.trim();
       const data = document.getElementById('dataEntrega').value;
       const hora = document.getElementById('horaEntrega').value;
       const tipo = document.getElementById('tipoProjeto').value;
-      if (!nome || !status || !data || !hora || tipo.startsWith('--')) return alert('Preencha todos os campos.');
+
+      if (!nome || !status || !data || !hora || tipo.startsWith('--')) {
+        alert('Preencha todos os campos.');
+        return;
+      }
+
       const projeto = {
         nome, status,
         dataEntrega: data,
@@ -78,6 +84,7 @@
           duracaoReal: 0
         }]
       };
+
       const id = db.ref('projetos').push().key;
       db.ref('projetos/' + id).set(projeto)
         .then(() => {
@@ -99,6 +106,7 @@
         div.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
         kanban.appendChild(div);
       });
+
       db.ref('projetos').on('value', snapshot => {
         colunas.forEach(c => document.getElementById(`coluna-${c}`).innerHTML = '');
         snapshot.forEach(proj => {
