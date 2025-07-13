@@ -19,6 +19,7 @@
 </head>
 <body>
   <h1>Projetos</h1>
+  <button onclick="logout()">Sair</button>
   <div>
     <input type="text" id="nomeProjeto" placeholder="Nome do projeto">
     <input type="text" id="statusInicial" placeholder="Status inicial (ex: croqui)">
@@ -48,18 +49,29 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    let authChecked = false;
     auth.onAuthStateChanged(user => {
-      authChecked = true;
       if (!user) {
-        //window.location.href = 'index.html';// baypass temporario
-        return;
+        window.location.href = 'index.html';
+      } else {
+        console.log("Logado como:", user.email);
+        desenharKanban();
+        exibirAlertas();
+        setInterval(exibirAlertas, 30000);
       }
-      desenharKanban();
-      setInterval(exibirAlertas, 30000);
     });
 
+    function logout() {
+      auth.signOut()
+        .then(() => window.location.href = 'index.html')
+        .catch(error => alert('Erro ao sair: ' + error.message));
+    }
+
     function cadastrarProjeto() {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Faça login antes de cadastrar projetos.');
+        return;
+      }
       const nome = document.getElementById('nomeProjeto').value.trim();
       const status = document.getElementById('statusInicial').value.trim();
       const data = document.getElementById('dataEntrega').value;
