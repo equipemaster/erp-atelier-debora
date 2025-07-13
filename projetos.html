@@ -52,7 +52,7 @@
     auth.onAuthStateChanged(user => {
       authChecked = true;
       if (!user) {
-        window.location.href = 'index.html';
+        //window.location.href = 'index.html';// baypass temporario
         return;
       }
       desenharKanban();
