@@ -63,7 +63,7 @@
     <select id="tipoProjeto">
       <option disabled selected>Tipo</option>
       <option>Noiva - Sob Medida</option>
-      <option>Noiva - Locação</option>
+      <option>Noiva - Locacao</option>
       <option>Festa - Sob Medida</option>
       <option>Casual</option>
     </select>
@@ -139,29 +139,26 @@
         kanban.appendChild(div);
       });
 
-      db.ref('projetos').on('value', snapshot => {
-        colunas.forEach(c => {
-          const colDiv = document.getElementById(`coluna-${c}`);
-          if (colDiv) colDiv.innerHTML = '';
-        });
-
+      db.ref('projetos').once('value').then(snapshot => {
         snapshot.forEach(proj => {
           const id = proj.key;
           const dados = proj.val();
+
           dados.etapas?.forEach((etapa, idx) => {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.id = `${id}-etapa-${idx}`;
-            div.innerHTML = `
-              <strong>${dados.nome}</strong><br>
-              <em>${etapa.nome}</em><br>
-              Entrega: ${dados.dataEntrega || 'N/D'}<br>
-              <select onchange="mudarStatusEtapa('${id}', ${idx}, this.value)">
-                <option ${!etapa.concluido ? 'selected' : ''}>Em andamento</option>
-                <option ${etapa.concluido ? 'selected' : ''}>Concluído</option>
-              </select>`;
-            const coluna = document.getElementById(`coluna-${etapa.nome}`);
-            if (coluna) coluna.appendChild(div);
+            if (!etapa.concluido || idx === dados.etapas.length - 1) {
+              const div = document.createElement('div');
+              div.className = 'card';
+              div.innerHTML = `
+                <strong>${dados.nome}</strong><br>
+                <em>${etapa.nome}</em><br>
+                Entrega: ${dados.dataEntrega || 'N/D'}<br>
+                <select onchange="mudarStatusEtapa('${id}', ${idx}, this.value)">
+                  <option ${!etapa.concluido ? 'selected' : ''}>Em andamento</option>
+                  <option ${etapa.concluido ? 'selected' : ''}>Concluído</option>
+                </select>`;
+              const coluna = document.getElementById(`coluna-${etapa.nome}`);
+              if (coluna) coluna.appendChild(div);
+            }
           });
         });
       });
@@ -171,16 +168,12 @@
       const ref = db.ref(`projetos/${projId}/etapas/${idx}`);
       ref.once('value').then(snap => {
         const etapa = snap.val();
-        if (status === 'Concluído') {
+        if (status === 'Concluído' && !etapa.concluido) {
           const fim = Date.now();
           const real = fim - etapa.inicio;
-          ref.update({ concluido: true, duracaoReal: real });
-
-          // Remover visualmente o card da etapa anterior
-          const oldCard = document.getElementById(`${projId}-etapa-${idx}`);
-          if (oldCard?.parentNode) oldCard.parentNode.removeChild(oldCard);
-
-          abrirProximaEtapa(projId, idx + 1);
+          ref.update({ concluido: true, duracaoReal: real })
+            .then(() => abrirProximaEtapa(projId, idx + 1))
+            .then(() => desenharKanban());
         }
       });
     }
@@ -190,9 +183,9 @@
       const nomeEtapa = nomes[idx];
       if (!nomeEtapa) return;
       const ref = db.ref(`projetos/${projId}/etapas/${idx}`);
-      ref.once('value').then(snap => {
+      return ref.once('value').then(snap => {
         if (!snap.exists()) {
-          ref.set({ nome: nomeEtapa, inicio: Date.now(), duracaoEstimativa: 48 * 3600 * 1000, concluido: false, duracaoReal: 0 });
+          return ref.set({ nome: nomeEtapa, inicio: Date.now(), duracaoEstimativa: 48 * 3600 * 1000, concluido: false, duracaoReal: 0 });
         }
       });
     }
