@@ -18,16 +18,31 @@
       padding: 0 20px;
       margin: 20px auto;
     }
+
+    
     #kanbanContainer > div {
       flex: 0 0 160px;
       background: #f9f3e7;
       padding: 10px;
       border-radius: 6px;
+      overflow-y: auto;
+      height: 400px;
+      
     }
+
+    #kanbanContainer > div::-webkit-scrollbar {
+         display: none;
+      }
+
+
+
+
+
     #kanbanContainer h3 {
       color: #333;
       font-size: 1rem;
       text-align: center;
+      
     }
     .card {
       background: #fff;
@@ -37,6 +52,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 0.875rem;
+      
     }
     select { width: 100%; margin-top: 5px; }
     .alerta {
@@ -57,6 +73,18 @@
       border-radius: 6px;
       text-decoration: none;
       text-align: center;
+    }
+
+    .cardprincipal {
+
+      margin-top: 0.5rem;
+      background: #1f4920;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      height: 400px;
+  
     }
   </style>
 </head>
@@ -85,7 +113,7 @@
     <button onclick="cadastrarProjeto()">Cadastrar</button>
   </div>
 
-  <div id="kanbanContainer"></div>
+  <div class="cardprincipal" id="kanbanContainer"></div>
   <div id="alertas" class="alerta"></div>
   <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
 
