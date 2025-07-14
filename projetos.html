@@ -62,14 +62,14 @@
 
     function logout() {
       auth.signOut()
-        .then(() => window.location.href = 'index.html')
+        //.then(() => window.location.href = 'index.html')
         .catch(error => alert('Erro ao sair: ' + error.message));
     }
 
     function cadastrarProjeto() {
       const user = auth.currentUser;
       if (!user) {
-        alert('Faça login antes de cadastrar projetos.');
+       // alert('Faça login antes de cadastrar projetos.');
         return;
       }
       const nome = document.getElementById('nomeProjeto').value.trim();
