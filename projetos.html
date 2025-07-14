@@ -12,51 +12,68 @@
   <style>
     #kanbanContainer {
       display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
+      flex-wrap: wrap;
+      justify-content: space-between;
       gap: 10px;
-      padding: 20px;
+      max-width: 100%;
+      padding: 0 20px;
+      margin: 20px auto;
     }
     #kanbanContainer > div {
-      min-width: 220px;
-      flex: 0 0 auto;
+      flex: 1;
       background: #f9f3e7;
       padding: 10px;
       border-radius: 6px;
+      min-width: 160px;
     }
-    #kanbanContainer h4 {
+    #kanbanContainer h3 {
       color: #333;
+      font-size: 1rem;
       text-align: center;
     }
-    .card {
+    #kanbanContainer .card {
       background: #fff;
       color: #000;
       padding: 8px;
       margin: 8px 0;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-size: 0.875rem;
     }
-    select {
-      width: 100%;
-      margin-top: 5px;
-    }
-    .btn-voltar {
-      margin: 2rem auto;
-      display: block;
-      padding: 10px 20px;
-      background: #c7a17a;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      text-decoration: none;
-      text-align: center;
-    }
+    select { width: 100%; margin-top: 5px; }
+    .alerta { background: #0e2d0f; color: white; text-align: center; padding: 1rem; margin-top: 2rem; border-radius: 8px; }
+    .btn-voltar { margin: 2rem auto; display: block; padding: 10px 20px; background: #c7a17a; color: white; border: none; border-radius: 6px; text-decoration: none; text-align: center; }
   </style>
 </head>
 <body>
   <h1>Projetos</h1>
+  <div>
+    <input type="text" id="nomeProjeto" placeholder="Nome do projeto">
+    <select id="statusInicial">
+      <option disabled selected>Selecione a etapa inicial</option>
+      <option value="Croqui">Croqui</option>
+      <option value="Modelagem">Modelagem</option>
+      <option value="Corte">Corte</option>
+      <option value="Costura">Costura</option>
+      <option value="Prova">Prova</option>
+      <option value="Ajuste">Ajuste</option>
+    </select>
+    <input type="date" id="dataEntrega">
+    <input type="time" id="horaEntrega">
+    <select id="tipoProjeto">
+      <option disabled selected>Tipo</option>
+      <option>Noiva - Sob Medida</option>
+      <option>Noiva - Locação</option>
+      <option>Festa - Sob Medida</option>
+      <option>Casual</option>
+    </select>
+    <button onclick="cadastrarProjeto()">Cadastrar</button>
+  </div>
+
   <div id="kanbanContainer"></div>
+  <div id="alertas" class="alerta"></div>
   <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
@@ -69,58 +86,103 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
+    auth.onAuthStateChanged(user => {
+      if (!user) return;
+      desenharKanban();
+      exibirAlertas();
+      setInterval(exibirAlertas, 30000);
+    });
+
+    function cadastrarProjeto() {
+      const nome = document.getElementById('nomeProjeto').value.trim();
+      const status = document.getElementById('statusInicial').value;
+      const data = document.getElementById('dataEntrega').value;
+      const hora = document.getElementById('horaEntrega').value;
+      const tipo = document.getElementById('tipoProjeto').value;
+
+      if (!nome || !status || !data || !hora || tipo.startsWith('Tipo')) {
+        alert('Preencha todos os campos.'); return;
+      }
+
+      const projeto = {
+        nome, status,
+        dataEntrega: data,
+        horaEntrega: hora,
+        tipoProjeto: tipo,
+        etapas: [{
+          nome: status,
+          inicio: Date.now(),
+          duracaoEstimativa: 72 * 3600 * 1000,
+          concluido: false,
+          duracaoReal: 0
+        }]
+      };
+
+      db.ref('projetos').push(projeto)
+        .then(() => {
+          document.getElementById('nomeProjeto').value = '';
+          document.getElementById('statusInicial').selectedIndex = 0;
+          document.getElementById('dataEntrega').value = '';
+          document.getElementById('horaEntrega').value = '';
+          document.getElementById('tipoProjeto').selectedIndex = 0;
+        })
+        .catch(e => alert('Erro ao cadastrar: ' + e.message));
+    }
+
     function desenharKanban() {
       const colunas = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
       const kanban = document.getElementById('kanbanContainer');
       kanban.innerHTML = '';
       colunas.forEach(c => {
         const div = document.createElement('div');
-        div.innerHTML = `<h4>${c}</h4><div id="coluna-${c}"></div>`;
+        div.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
         kanban.appendChild(div);
       });
 
-      db.ref('projetos').off('value');
       db.ref('projetos').on('value', snapshot => {
-        colunas.forEach(c => document.getElementById(`coluna-${c}`).innerHTML = '');
+        colunas.forEach(c => {
+          const colDiv = document.getElementById(`coluna-${c}`);
+          if (colDiv) colDiv.innerHTML = '';
+        });
+
         snapshot.forEach(proj => {
           const id = proj.key;
           const dados = proj.val();
-
           dados.etapas?.forEach((etapa, idx) => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.id = `${id}-etapa-${idx}`;
-
-            card.innerHTML = `
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.id = `${id}-etapa-${idx}`;
+            div.innerHTML = `
               <strong>${dados.nome}</strong><br>
               <em>${etapa.nome}</em><br>
+              Entrega: ${dados.dataEntrega || 'N/D'}<br>
               <select onchange="mudarStatusEtapa('${id}', ${idx}, this.value)">
                 <option ${!etapa.concluido ? 'selected' : ''}>Em andamento</option>
                 <option ${etapa.concluido ? 'selected' : ''}>Concluído</option>
               </select>`;
-
             const coluna = document.getElementById(`coluna-${etapa.nome}`);
-            if (coluna) coluna.appendChild(card);
+            if (coluna) coluna.appendChild(div);
           });
         });
       });
     }
 
-    async function mudarStatusEtapa(projId, idx, status) {
+    function mudarStatusEtapa(projId, idx, status) {
       const ref = db.ref(`projetos/${projId}/etapas/${idx}`);
-      const snap = await ref.once('value');
-      const etapa = snap.val();
+      ref.once('value').then(snap => {
+        const etapa = snap.val();
+        if (status === 'Concluído') {
+          const fim = Date.now();
+          const real = fim - etapa.inicio;
+          ref.update({ concluido: true, duracaoReal: real });
 
-      if (status === 'Concluído') {
-        const fim = Date.now();
-        const real = fim - etapa.inicio;
-        await ref.update({ concluido: true, duracaoReal: real });
+          // Remover visualmente o card da etapa anterior
+          const oldCard = document.getElementById(`${projId}-etapa-${idx}`);
+          if (oldCard?.parentNode) oldCard.parentNode.removeChild(oldCard);
 
-        const oldCard = document.getElementById(`${projId}-etapa-${idx}`);
-        if (oldCard?.parentNode) oldCard.parentNode.removeChild(oldCard);
-
-        abrirProximaEtapa(projId, idx + 1);
-      }
+          abrirProximaEtapa(projId, idx + 1);
+        }
+      });
     }
 
     function abrirProximaEtapa(projId, idx) {
@@ -135,11 +197,19 @@
       });
     }
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        desenharKanban();
-      }
-    });
+    function exibirAlertas() {
+      db.ref('projetos').once('value').then(snapshot => {
+        let alerta = '';
+        snapshot.forEach(proj => {
+          const p = proj.val();
+          const data = new Date(`${p.dataEntrega}T${p.horaEntrega}`);
+          const dias = (data - Date.now()) / (1000 * 60 * 60 * 24);
+          const finalizado = p.etapas?.some(e => e.nome === 'Finalizado' && e.concluido);
+          if (dias <= 3 && !finalizado) alerta += `<p>⚠️ ${p.nome} vence em ${Math.ceil(dias)} dias!</p>`;
+        });
+        document.getElementById('alertas').innerHTML = alerta;
+      });
+    }
   </script>
 </body>
 </html>
