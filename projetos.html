@@ -3,28 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Projetos</title>
+  <title>Projetos - Kanban</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <!-- Chart.js opcional -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    /* Estilização do layout responsivo */
     #kanban {
       display: flex;
       flex-wrap: nowrap;
       overflow-x: auto;
       gap: 1rem;
-      margin-top: 2rem;
+      padding: 1rem;
+      margin: 2rem auto;
+      max-width: 95vw;
     }
     #kanban > div {
       background: #fff;
       color: #000;
       border-radius: 8px;
       padding: 1rem;
-      min-width: 200px;
-      flex: 0 0 auto;
-      max-width: 220px;
+      min-width: 180px;
+      flex: 1;
+      max-width: 250px;
+      flex-shrink: 0;
     }
     #kanban h3 {
       background-color: #c7a17a;
@@ -32,6 +38,7 @@
       padding: 5px;
       border-radius: 4px;
       text-align: center;
+      font-size: 1rem;
     }
     #kanban div div {
       margin-top: 0.5rem;
@@ -41,22 +48,25 @@
       overflow-wrap: break-word;
       font-size: 0.9rem;
     }
-    select {
-      width: 100%;
-      margin-top: 5px;
+    select { width: 100%; margin-top: 5px; }
+    .kanban-container { overflow-x: auto; }
+    .botao-voltar {
+      margin: 2rem auto;
+      display: flex;
+      justify-content: center;
     }
   </style>
 </head>
 <body>
   <h1>Projetos</h1>
-  <button onclick="logout()">Sair</button>
+  <!-- Formulário de Cadastro de Projetos -->
   <div>
     <input type="text" id="nomeProjeto" placeholder="Nome do projeto">
-    <input type="text" id="statusInicial" placeholder="Status inicial (ex: croqui)">
+    <input type="text" id="statusInicial" placeholder="Status inicial">
     <input type="date" id="dataEntrega">
     <input type="time" id="horaEntrega">
     <select id="tipoProjeto">
-      <option disabled selected>-- Selecione o tipo --</option>
+      <option disabled selected>Tipo</option>
       <option>Noiva - Sob Medida</option>
       <option>Noiva - Locacao</option>
       <option>Festa - Sob Medida</option>
@@ -64,46 +74,50 @@
     </select>
     <button onclick="cadastrarProjeto()">Cadastrar</button>
   </div>
+
+  <!-- Quadro Kanban -->
   <div id="kanban"></div>
+
+  <!-- Alerta de prazo -->
   <div id="alertas"></div>
+
+  <!-- Botão para voltar ao menu -->
+  <div class="botao-voltar">
+    <a href="home.html">
+      <button>Voltar ao Menu</button>
+    </a>
+  </div>
+
+  <!-- Script de funcionalidade -->
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+      apiKey: "SUA_APIKEY",
       authDomain: "erp-atelier-debora.firebaseapp.com",
       databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
       projectId: "erp-atelier-debora",
-      appId: "1:1234567890:web:321abc456def7890"
+      appId: "SEU_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
     auth.onAuthStateChanged(user => {
-      if (!user) {
-        console.warn("Usuário não autenticado.");
-      } else {
-        desenharKanban();
-        exibirAlertas();
-        setInterval(exibirAlertas, 30000);
-      }
+      if (!user) return;
+      desenharKanban();
+      exibirAlertas();
+      setInterval(exibirAlertas, 30000);
     });
 
-    function logout() {
-      auth.signOut().catch(error => alert('Erro ao sair: ' + error.message));
-    }
-
     function cadastrarProjeto() {
-      const nome = document.getElementById('nomeProjeto').value.trim();
-      const status = document.getElementById('statusInicial').value.trim();
+      const nome = document.getElementById('nomeProjeto').value;
+      const status = document.getElementById('statusInicial').value;
       const data = document.getElementById('dataEntrega').value;
       const hora = document.getElementById('horaEntrega').value;
       const tipo = document.getElementById('tipoProjeto').value;
-
-      if (!nome || !status || !data || !hora || tipo.startsWith('--')) {
+      if (!nome || !status || !data || !hora || tipo.startsWith('Tipo')) {
         alert('Preencha todos os campos.');
         return;
       }
-
       const projeto = {
         nome, status,
         dataEntrega: data,
@@ -117,17 +131,14 @@
           duracaoReal: 0
         }]
       };
-
       const id = db.ref('projetos').push().key;
-      db.ref('projetos/' + id).set(projeto)
-        .then(() => {
-          document.getElementById('nomeProjeto').value = '';
-          document.getElementById('statusInicial').value = '';
-          document.getElementById('dataEntrega').value = '';
-          document.getElementById('horaEntrega').value = '';
-          document.getElementById('tipoProjeto').selectedIndex = 0;
-        })
-        .catch(e => alert('Erro ao cadastrar: ' + e));
+      db.ref('projetos/' + id).set(projeto).then(() => {
+        document.getElementById('nomeProjeto').value = '';
+        document.getElementById('statusInicial').value = '';
+        document.getElementById('dataEntrega').value = '';
+        document.getElementById('horaEntrega').value = '';
+        document.getElementById('tipoProjeto').selectedIndex = 0;
+      });
     }
 
     function desenharKanban() {
@@ -139,7 +150,6 @@
         div.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
         kanban.appendChild(div);
       });
-
       db.ref('projetos').on('value', snapshot => {
         colunas.forEach(c => document.getElementById(`coluna-${c}`).innerHTML = '');
         snapshot.forEach(proj => {
@@ -149,6 +159,7 @@
             const div = document.createElement('div');
             div.innerHTML = `
               <div><strong>${dados.nome}</strong></div>
+              <div>${etapa.nome}</div>
               <div>Entrega: ${dados.dataEntrega}</div>
               <select onchange="mudarStatusEtapa('${id}', ${idx}, this.value)">
                 <option ${etapa.concluido ? '' : 'selected'}>Em andamento</option>
