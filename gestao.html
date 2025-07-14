@@ -75,7 +75,7 @@
     <h2 style="color:#c7a17a;">Visão de Etapas de Produção</h2>
     <div id="kanbanContainer"></div>
   </section>
-
+ 
   <canvas id="graficoGestao"></canvas>
 
   <script>
@@ -89,21 +89,24 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+    
 
     let chart;
     let filtroAtual = 'andamento';
 
     function desenharGrafico(statusFiltro) {
+      
       db.ref('projetos').once('value').then(snapshot => {
         let andamento = 0;
         let finalizado = 0;
         snapshot.forEach(p => {
-          const status = p.val().status?.toLowerCase() || '';
-          //if (status.includes('finaliz')) finalizado++;
-          //else andamento++;
+          const etapas = p.val().etapas || [];
+          const etapaAtual = etapas.find(e => !e.concluido);
+          if (!etapaAtual) finalizado++;
+          else andamento++;
         });
 
-        const data = statusFiltro === 'finalizado' ? [0, finalizado] : [andamento, 0];
+        const data = [andamento, finalizado];
         const ctx = document.getElementById('graficoGestao').getContext('2d');
         if (chart) chart.destroy();
         chart = new Chart(ctx, {
@@ -132,40 +135,48 @@
         filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
         desenharGrafico(filtroAtual);
       }, 5000);
+      
+      
 
-      db.ref('projetos').on('child_changed', () => desenharGrafico(filtroAtual));
-      db.ref('projetos').on('child_added', () => desenharGrafico(filtroAtual));
-      db.ref('projetos').on('child_removed', () => desenharGrafico(filtroAtual));
+      db.ref('projetos').on('value', atualizarKanban); 
     });
 
-    const colunas = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
-
     function atualizarKanban() {
-      db.ref('projetos').once('value').then(snap => {
-        const projetos = [];
-        snap.forEach(p => projetos.push({ id: p.key, ...p.val() }));
+      const colunas = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
+      const caixa = document.getElementById('kanbanContainer');
+      caixa.innerHTML = '';
 
-        const caixa = document.getElementById('kanbanContainer');
-        caixa.innerHTML = '';
-        colunas.forEach(nomeCol => {
-          const coluna = document.createElement('div');
-          coluna.innerHTML = `<h4>${nomeCol}</h4>`;
-          projetos.filter(p => p.status?.toLowerCase() === nomeCol.toLowerCase()).forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `<strong>${p.nome}</strong><br><small>Entrega: ${p.dataEntrega || '--:--'}<br>Tipo: ${p.tipo || '-'}</small>`;
-            coluna.appendChild(card);
-          });
-          caixa.appendChild(coluna);
+      colunas.forEach(nomeCol => {
+        const coluna = document.createElement('div');
+        coluna.id = `coluna-${nomeCol}`;
+        coluna.innerHTML = `<h4>${nomeCol}</h4>`;
+        caixa.appendChild(coluna);
+      });
+
+      db.ref('projetos').once('value').then(snapshot => {
+        snapshot.forEach(p => {
+          
+          const projeto = p.val();
+          
+          const etapas = projeto.etapas || [];
+          
+
+          const etapaAtual = etapas.find(e => !e.concluido);
+          const etapaNome = etapaAtual ? etapaAtual.nome : 'Finalizado';
+
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <strong>${projeto.nome}</strong><br>
+            <small>Entrega: ${projeto.dataEntrega || '--'}<br>
+            Tipo: ${projeto.tipoProjeto || '-'}</small>
+          `;
+
+          const destino = document.getElementById(`coluna-${etapaNome}`);
+          if (destino) destino.appendChild(card);
         });
       });
     }
-
-    db.ref('projetos')
-      .on('child_added', atualizarKanban)
-      .on('child_changed', atualizarKanban)
-      .on('child_removed', atualizarKanban);
-    atualizarKanban();
 
     function atualizarAlerta() {
       db.ref('projetos').once('value').then(snapshot => {
@@ -173,13 +184,14 @@
         snapshot.forEach(p => {
           const nome = p.val().nome;
           const dataEntrega = p.val().dataEntrega;
-          const status = (p.val().status || '').toLowerCase();
+          const etapas = p.val().etapas || [];
+          const finalizado = etapas.every(e => e.concluido);
           if (!dataEntrega) return;
           const hoje = new Date();
           const dtEntrega = new Date(dataEntrega);
           const dias = Math.ceil((dtEntrega - hoje) / (1000*60*60*24));
 
-          html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 && status !== 'finalizado' ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
+          html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 && !finalizado ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
             Projeto <strong>${nome}</strong> - Entrega em <strong>${dias}</strong> dia(s)
           </div>`;
         });
@@ -189,6 +201,7 @@
 
     setInterval(atualizarAlerta, 60000);
     atualizarAlerta();
+    
   </script>
 </body>
 </html>
