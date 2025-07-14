@@ -11,35 +11,29 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     /* Estilo do Kanban responsivo */
-    #kanban {
+    #kanbanContainer {
       display: flex;
-      overflow-x: auto;
-      gap: 1rem;
-      padding: 1rem;
-      flex-wrap: nowrap;
-      background: #0e2d0f;
+      justify-content: space-between;
+      gap: 10px;
+      max-width: 1000px;
+      margin: 20px auto;
     }
-    #kanban > div {
+    #kanbanContainer > div {
+      flex: 1;
+      background: #f9f3e7;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    #kanbanContainer h4 {
+      color: #333;
+    }
+    #kanbanContainer .card {
       background: #fff;
       color: #000;
-      border-radius: 8px;
-      padding: 1rem;
-      min-width: 220px;
-      flex: 0 0 240px;
-    }
-    #kanban h3 {
-      background-color: #c7a17a;
-      color: white;
-      padding: 5px;
+      padding: 8px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
       border-radius: 4px;
-      text-align: center;
-    }
-    #kanban div div {
-      margin-top: 0.5rem;
-      padding: 0.5rem;
-      background: #f3f3f3;
-      border-radius: 6px;
-      overflow-wrap: break-word;
     }
     select { width: 100%; margin-top: 5px; }
     .alerta { background: #0e2d0f; color: white; text-align: center; padding: 1rem; margin-top: 2rem; border-radius: 8px; }
