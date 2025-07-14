@@ -10,63 +10,54 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    /* Estilo do Kanban responsivo */
-    #kanban {
+    #kanbanContainer {
       display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
+      flex-wrap: wrap;
+      justify-content: space-between;
       gap: 10px;
-      padding: 20px;
       max-width: 100%;
+      padding: 0 20px;
+      margin: 20px auto;
     }
-    #kanban > div {
-      flex: 0 0 200px;
+    #kanbanContainer > div {
+      flex: 1;
       background: #f9f3e7;
       padding: 10px;
       border-radius: 6px;
-      min-height: 300px;
+      min-width: 160px;
     }
-    #kanban h3 {
+    #kanbanContainer h3 {
       color: #333;
+      font-size: 1rem;
       text-align: center;
-      margin-bottom: 10px;
     }
-    .card {
+    #kanbanContainer .card {
       background: #fff;
       color: #000;
       padding: 8px;
       margin: 8px 0;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-size: 14px;
+      font-size: 0.875rem;
     }
     select { width: 100%; margin-top: 5px; }
-    .alerta {
-      background: #0e2d0f;
-      color: white;
-      text-align: center;
-      padding: 1rem;
-      margin-top: 2rem;
-      border-radius: 8px;
-    }
-    .btn-voltar {
-      margin: 2rem auto;
-      display: block;
-      padding: 10px 20px;
-      background: #c7a17a;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      text-decoration: none;
-      text-align: center;
-    }
+    .alerta { background: #0e2d0f; color: white; text-align: center; padding: 1rem; margin-top: 2rem; border-radius: 8px; }
+    .btn-voltar { margin: 2rem auto; display: block; padding: 10px 20px; background: #c7a17a; color: white; border: none; border-radius: 6px; text-decoration: none; text-align: center; }
   </style>
 </head>
 <body>
   <h1>Projetos</h1>
   <div>
     <input type="text" id="nomeProjeto" placeholder="Nome do projeto">
-    <input type="text" id="statusInicial" placeholder="Status inicial">
+    <select id="statusInicial">
+      <option disabled selected>Selecione a etapa inicial</option>
+      <option value="Croqui">Croqui</option>
+      <option value="Modelagem">Modelagem</option>
+      <option value="Corte">Corte</option>
+      <option value="Costura">Costura</option>
+      <option value="Prova">Prova</option>
+      <option value="Ajuste">Ajuste</option>
+    </select>
     <input type="date" id="dataEntrega">
     <input type="time" id="horaEntrega">
     <select id="tipoProjeto">
@@ -79,12 +70,11 @@
     <button onclick="cadastrarProjeto()">Cadastrar</button>
   </div>
 
-  <div id="kanban"></div>
+  <div id="kanbanContainer"></div>
   <div id="alertas" class="alerta"></div>
   <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
 
   <script>
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
       authDomain: "erp-atelier-debora.firebaseapp.com",
@@ -105,7 +95,7 @@
 
     function cadastrarProjeto() {
       const nome = document.getElementById('nomeProjeto').value.trim();
-      const status = document.getElementById('statusInicial').value.trim();
+      const status = document.getElementById('statusInicial').value;
       const data = document.getElementById('dataEntrega').value;
       const hora = document.getElementById('horaEntrega').value;
       const tipo = document.getElementById('tipoProjeto').value;
@@ -131,7 +121,7 @@
       db.ref('projetos').push(projeto)
         .then(() => {
           document.getElementById('nomeProjeto').value = '';
-          document.getElementById('statusInicial').value = '';
+          document.getElementById('statusInicial').selectedIndex = 0;
           document.getElementById('dataEntrega').value = '';
           document.getElementById('horaEntrega').value = '';
           document.getElementById('tipoProjeto').selectedIndex = 0;
@@ -141,32 +131,36 @@
 
     function desenharKanban() {
       const colunas = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
-      const kanban = document.getElementById('kanban');
+      const kanban = document.getElementById('kanbanContainer');
       kanban.innerHTML = '';
       colunas.forEach(c => {
-        const coluna = document.createElement('div');
-        coluna.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
-        kanban.appendChild(coluna);
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
+        kanban.appendChild(div);
       });
 
       db.ref('projetos').on('value', snapshot => {
-        colunas.forEach(c => document.getElementById(`coluna-${c}`).innerHTML = '');
+        colunas.forEach(c => {
+          const colDiv = document.getElementById(`coluna-${c}`);
+          if (colDiv) colDiv.innerHTML = '';
+        });
+
         snapshot.forEach(proj => {
           const id = proj.key;
           const dados = proj.val();
           dados.etapas?.forEach((etapa, idx) => {
-            const card = document.createElement('div');
-            card.classList.add('card');
-            card.innerHTML = `
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
               <strong>${dados.nome}</strong><br>
-              <small>${etapa.nome}</small><br>
-              <small>Entrega: ${dados.dataEntrega || 'N/D'}</small><br>
+              <em>${etapa.nome}</em><br>
+              Entrega: ${dados.dataEntrega || 'N/D'}<br>
               <select onchange="mudarStatusEtapa('${id}', ${idx}, this.value)">
                 <option ${!etapa.concluido ? 'selected' : ''}>Em andamento</option>
                 <option ${etapa.concluido ? 'selected' : ''}>Concluído</option>
               </select>`;
             const coluna = document.getElementById(`coluna-${etapa.nome}`);
-            if (coluna) coluna.appendChild(card);
+            if (coluna) coluna.appendChild(div);
           });
         });
       });
