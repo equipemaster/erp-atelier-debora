@@ -99,8 +99,8 @@
         let finalizado = 0;
         snapshot.forEach(p => {
           const status = p.val().status?.toLowerCase() || '';
-          if (status.includes('finaliz')) finalizado++;
-          else andamento++;
+          //if (status.includes('finaliz')) finalizado++;
+          //else andamento++;
         });
 
         const data = statusFiltro === 'finalizado' ? [0, finalizado] : [andamento, 0];
