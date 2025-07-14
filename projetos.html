@@ -10,11 +10,41 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    #kanban { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
-    #kanban > div { background: #fff; color: #000; border-radius: 8px; padding: 1rem; min-width: 180px; flex: 1; max-width: 220px; }
-    #kanban h3 { background-color: #c7a17a; color: white; padding: 5px; border-radius: 4px; text-align: center; }
-    #kanban div div { margin-top: 0.5rem; padding: 0.5rem; background: #f3f3f3; border-radius: 6px; overflow-wrap: break-word; }
-    select { width: 100%; margin-top: 5px; }
+    #kanban {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    #kanban > div {
+      background: #fff;
+      color: #000;
+      border-radius: 8px;
+      padding: 1rem;
+      min-width: 200px;
+      flex: 0 0 auto;
+      max-width: 220px;
+    }
+    #kanban h3 {
+      background-color: #c7a17a;
+      color: white;
+      padding: 5px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    #kanban div div {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #f3f3f3;
+      border-radius: 6px;
+      overflow-wrap: break-word;
+      font-size: 0.9rem;
+    }
+    select {
+      width: 100%;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -36,14 +66,13 @@
   </div>
   <div id="kanban"></div>
   <div id="alertas"></div>
-
   <script>
     const firebaseConfig = {
-      apiKey: "SUA_APIKEY",
+      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
       authDomain: "erp-atelier-debora.firebaseapp.com",
       databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
       projectId: "erp-atelier-debora",
-      appId: "SEU_APP_ID"
+      appId: "1:1234567890:web:321abc456def7890"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -51,9 +80,8 @@
 
     auth.onAuthStateChanged(user => {
       if (!user) {
-        //window.location.href = 'index.html';
+        console.warn("Usuário não autenticado.");
       } else {
-        console.log("Logado como:", user.email);
         desenharKanban();
         exibirAlertas();
         setInterval(exibirAlertas, 30000);
@@ -61,17 +89,10 @@
     });
 
     function logout() {
-      auth.signOut()
-        //.then(() => window.location.href = 'index.html')
-        .catch(error => alert('Erro ao sair: ' + error.message));
+      auth.signOut().catch(error => alert('Erro ao sair: ' + error.message));
     }
 
     function cadastrarProjeto() {
-      const user = auth.currentUser;
-      if (!user) {
-       // alert('Faça login antes de cadastrar projetos.');
-        return;
-      }
       const nome = document.getElementById('nomeProjeto').value.trim();
       const status = document.getElementById('statusInicial').value.trim();
       const data = document.getElementById('dataEntrega').value;
