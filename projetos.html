@@ -13,32 +13,30 @@
     #kanbanContainer {
       display: flex;
       justify-content: space-between;
+      gap: 10px;
+      max-width: 1000px;
+      margin: 20px auto;
       flex-wrap: nowrap;
       overflow-x: auto;
-      gap: 10px;
-      padding: 1rem;
     }
     #kanbanContainer > div {
-      flex: 0 0 200px;
+      flex: 1;
       background: #f9f3e7;
       padding: 10px;
       border-radius: 6px;
+      min-width: 160px;
     }
-    #kanbanContainer h3 {
-      text-align: center;
+    #kanbanContainer h4 {
       color: #333;
-      background: #c7a17a;
-      padding: 6px;
-      border-radius: 4px;
+      text-align: center;
     }
     .card {
       background: #fff;
       color: #000;
-      padding: 10px;
+      padding: 8px;
       margin: 8px 0;
       border: 1px solid #ccc;
       border-radius: 4px;
-      word-wrap: break-word;
     }
     select { width: 100%; margin-top: 5px; }
     .alerta { background: #0e2d0f; color: white; text-align: center; padding: 1rem; margin-top: 2rem; border-radius: 8px; }
@@ -57,7 +55,6 @@
       <option>Costura</option>
       <option>Prova</option>
       <option>Ajuste</option>
-      <option>Finalizado</option>
     </select>
     <input type="date" id="dataEntrega">
     <input type="time" id="horaEntrega">
@@ -86,6 +83,7 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+    const projetosCache = {};
 
     auth.onAuthStateChanged(user => {
       if (!user) return;
@@ -110,16 +108,24 @@
         dataEntrega: data,
         horaEntrega: hora,
         tipoProjeto: tipo,
-        etapas: [{ nome: status, inicio: Date.now(), duracaoEstimativa: 72 * 3600 * 1000, concluido: false, duracaoReal: 0 }]
+        etapas: [{
+          nome: status,
+          inicio: Date.now(),
+          duracaoEstimativa: 72 * 3600 * 1000,
+          concluido: false,
+          duracaoReal: 0
+        }]
       };
 
-      db.ref('projetos').push(projeto).then(() => {
-        document.getElementById('nomeProjeto').value = '';
-        document.getElementById('statusInicial').selectedIndex = 0;
-        document.getElementById('dataEntrega').value = '';
-        document.getElementById('horaEntrega').value = '';
-        document.getElementById('tipoProjeto').selectedIndex = 0;
-      });
+      db.ref('projetos').push(projeto)
+        .then(() => {
+          document.getElementById('nomeProjeto').value = '';
+          document.getElementById('statusInicial').selectedIndex = 0;
+          document.getElementById('dataEntrega').value = '';
+          document.getElementById('horaEntrega').value = '';
+          document.getElementById('tipoProjeto').selectedIndex = 0;
+        })
+        .catch(e => alert('Erro ao cadastrar: ' + e.message));
     }
 
     function desenharKanban() {
@@ -128,7 +134,7 @@
       kanban.innerHTML = '';
       colunas.forEach(c => {
         const div = document.createElement('div');
-        div.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
+        div.innerHTML = `<h4>${c}</h4><div id="coluna-${c}"></div>`;
         kanban.appendChild(div);
       });
 
@@ -137,10 +143,11 @@
         snapshot.forEach(proj => {
           const id = proj.key;
           const dados = proj.val();
+          projetosCache[id] = dados;
           dados.etapas?.forEach((etapa, idx) => {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.innerHTML = `
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
               <strong>${dados.nome}</strong><br>
               <em>${etapa.nome}</em><br>
               Entrega: ${dados.dataEntrega || 'N/D'}<br>
@@ -149,10 +156,21 @@
                 <option ${etapa.concluido ? 'selected' : ''}>Concluído</option>
               </select>`;
             const coluna = document.getElementById(`coluna-${etapa.nome}`);
-            if (coluna) coluna.appendChild(div);
+            if (coluna) coluna.appendChild(card);
           });
         });
       });
+    }
+
+    function removerCardAnterior(projId, nomeEtapa) {
+      const coluna = document.getElementById(`coluna-${nomeEtapa}`);
+      if (coluna) {
+        [...coluna.children].forEach(card => {
+          if (card.innerHTML.includes(projetosCache[projId].nome)) {
+            coluna.removeChild(card);
+          }
+        });
+      }
     }
 
     function mudarStatusEtapa(projId, idx, status) {
@@ -163,6 +181,7 @@
           const fim = Date.now();
           const real = fim - etapa.inicio;
           ref.update({ concluido: true, duracaoReal: real });
+          removerCardAnterior(projId, etapa.nome);
           abrirProximaEtapa(projId, idx + 1);
         }
       });
@@ -172,8 +191,6 @@
       const nomes = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
       const nomeEtapa = nomes[idx];
       if (!nomeEtapa) return;
-      const refAtual = db.ref(`projetos/${projId}/etapas/${idx - 1}`);
-      refAtual.update({ visivel: false }); // Oculta etapa anterior
       const ref = db.ref(`projetos/${projId}/etapas/${idx}`);
       ref.once('value').then(snap => {
         if (!snap.exists()) {
