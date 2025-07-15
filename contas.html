@@ -4,16 +4,44 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Financeiro - Ateliê Débora Freitas</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    #graficoContas {
-      max-width: 600px;
+    body {
+      font-family: 'Playfair Display', serif;
+      background-color: #0d2d0e;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+    h1, h2 {
+      color: #c7a17a;
+    }
+    input, select, button {
+      padding: 0.6rem;
+      margin: 0.3rem;
+      border-radius: 4px;
+      border: none;
+      width: 90%;
+      max-width: 250px;
+    }
+    button {
+      background-color: #c7a17a;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a87b51;
+    }
+    canvas {
+      max-width: 100%;
       margin: 2rem auto;
-      display: block;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
     }
     .voltar {
       display: inline-block;
@@ -28,6 +56,40 @@
     .voltar:hover {
       background: #a87b51;
     }
+    table {
+      margin: 2rem auto;
+      width: 100%;
+      max-width: 1000px;
+      background: white;
+      color: black;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #c7a17a;
+      color: white;
+    }
+    #saldoTotal {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-top: 1rem;
+      color: #27ae60;
+    }
+    @media (max-width: 600px) {
+      input, select, button {
+        width: 100%;
+        max-width: 100%;
+      }
+      table, th, td {
+        font-size: 0.85rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -40,10 +102,41 @@
       <option value="pagar">A Pagar</option>
       <option value="receber">A Receber</option>
     </select>
-    <button onclick="registrarConta()">Registrar</button>
+    <button onclick="registrarConta()"><i class="fas fa-plus"></i> Registrar</button>
   </section>
 
-  <canvas id="graficoContas" width="400" height="300"></canvas>
+  <div id="saldoTotal">Saldo Total: R$ 0,00</div>
+
+  <canvas id="graficoContas"></canvas>
+  <canvas id="graficoMensal"></canvas>
+
+  <section>
+    <h2>Lista de Contas</h2>
+    <div>
+      <select id="filtroTipo" onchange="filtrarContas()">
+        <option value="">Todos os Tipos</option>
+        <option value="pagar">A Pagar</option>
+        <option value="receber">A Receber</option>
+      </select>
+      <input type="number" id="filtroValor" placeholder="Valor mínimo" onchange="filtrarContas()">
+      <input type="date" id="filtroDataInicio" onchange="filtrarContas()">
+      <input type="date" id="filtroDataFim" onchange="filtrarContas()">
+      <button onclick="exportarCSV()">Exportar CSV</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Valor</th>
+          <th>Tipo</th>
+          <th>Data</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaContas"></tbody>
+    </table>
+  </section>
+
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
   <script>
@@ -58,6 +151,8 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
+    let contasTotais = [];
+
     auth.onAuthStateChanged(user => {
       if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
         alert('Acesso restrito. Redirecionando...');
@@ -65,19 +160,22 @@
         return;
       }
       carregarGraficoContas();
+      carregarContas();
     });
 
     function registrarConta() {
       const descricao = document.getElementById('descricaoConta').value;
       const valor = parseFloat(document.getElementById('valorConta').value);
       const tipo = document.getElementById('tipoConta').value;
+      const data = new Date().toISOString().split('T')[0];
       if (!descricao || isNaN(valor)) return alert('Preencha todos os campos!');
       const id = db.ref(`contas/${tipo}`).push().key;
-      db.ref(`contas/${tipo}/${id}`).set({ descricao, valor, tipo });
+      db.ref(`contas/${tipo}/${id}`).set({ id, descricao, valor, tipo, data });
       document.getElementById('descricaoConta').value = '';
       document.getElementById('valorConta').value = '';
       document.getElementById('tipoConta').value = 'pagar';
       carregarGraficoContas();
+      carregarContas();
     }
 
     function carregarGraficoContas() {
@@ -88,29 +186,123 @@
       ]).then(([snapPagar, snapReceber]) => {
         snapPagar.forEach(c => pagar += parseFloat(c.val().valor) || 0);
         snapReceber.forEach(c => receber += parseFloat(c.val().valor) || 0);
+        document.getElementById('saldoTotal').textContent = `Saldo Total: R$ ${(receber - pagar).toFixed(2)}`;
 
         const ctx = document.getElementById('graficoContas').getContext('2d');
-        if (window.graficoContas && typeof window.graficoContas.destroy === 'function') {
-          window.graficoContas.destroy();
-        }
-
+        if (window.graficoContas) window.graficoContas.destroy();
         window.graficoContas = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: ['A Pagar', 'A Receber'],
             datasets: [{
-              label: 'Contas',
+              label: 'Contas em R$',
               data: [pagar, receber],
               backgroundColor: ['#e74c3c', '#27ae60']
             }]
           },
-          options: {
-            responsive: true,
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
+          options: { responsive: true, scales: { y: { beginAtZero: true } } }
         });
+      });
+    }
+
+    function carregarContas() {
+      contasTotais = [];
+      ['pagar', 'receber'].forEach(tipo => {
+        db.ref(`contas/${tipo}`).once('value').then(snapshot => {
+          snapshot.forEach(c => contasTotais.push(c.val()));
+          filtrarContas();
+          gerarGraficoMensal();
+        });
+      });
+    }
+
+    function filtrarContas() {
+      const tipo = document.getElementById('filtroTipo').value;
+      const valor = parseFloat(document.getElementById('filtroValor').value) || 0;
+      const inicio = document.getElementById('filtroDataInicio').value;
+      const fim = document.getElementById('filtroDataFim').value;
+      const tabela = document.getElementById('tabelaContas');
+      tabela.innerHTML = '';
+      contasTotais.filter(c => {
+        const passaTipo = !tipo || c.tipo === tipo;
+        const passaValor = c.valor >= valor;
+        const passaData = (!inicio || c.data >= inicio) && (!fim || c.data <= fim);
+        return passaTipo && passaValor && passaData;
+      }).forEach(conta => {
+        tabela.innerHTML += `
+          <tr>
+            <td>${conta.descricao}</td>
+            <td>R$ ${parseFloat(conta.valor).toFixed(2)}</td>
+            <td>${conta.tipo}</td>
+            <td>${conta.data || ''}</td>
+            <td>
+              <button onclick="editarConta('${conta.tipo}', '${conta.id}')"><i class='fas fa-edit'></i></button>
+              <button onclick="excluirConta('${conta.tipo}', '${conta.id}')"><i class='fas fa-trash'></i></button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function exportarCSV() {
+      let csv = 'Descrição,Valor,Tipo,Data\n';
+      contasTotais.forEach(c => {
+        csv += `${c.descricao},${c.valor},${c.tipo},${c.data || ''}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contas.csv';
+      a.click();
+    }
+
+    function editarConta(tipo, id) {
+      db.ref(`contas/${tipo}/${id}`).once('value').then(snapshot => {
+        const conta = snapshot.val();
+        const novaDescricao = prompt('Nova descrição:', conta.descricao);
+        const novoValor = prompt('Novo valor:', conta.valor);
+        if (novaDescricao && !isNaN(novoValor)) {
+          db.ref(`contas/${tipo}/${id}`).update({ descricao: novaDescricao, valor: parseFloat(novoValor) });
+          carregarContas();
+          carregarGraficoContas();
+        }
+      });
+    }
+
+    function excluirConta(tipo, id) {
+      if (confirm('Deseja excluir esta conta?')) {
+        db.ref(`contas/${tipo}/${id}`).remove().then(() => {
+          carregarContas();
+          carregarGraficoContas();
+        });
+      }
+    }
+
+    function gerarGraficoMensal() {
+      const dadosPorMes = {};
+      contasTotais.forEach(c => {
+        if (!c.data) return;
+        const mes = c.data.substring(0, 7);
+        if (!dadosPorMes[mes]) dadosPorMes[mes] = { pagar: 0, receber: 0 };
+        dadosPorMes[mes][c.tipo] += parseFloat(c.valor);
+      });
+
+      const meses = Object.keys(dadosPorMes).sort();
+      const pagarData = meses.map(m => dadosPorMes[m].pagar);
+      const receberData = meses.map(m => dadosPorMes[m].receber);
+
+      const ctx = document.getElementById('graficoMensal').getContext('2d');
+      if (window.graficoMensal) window.graficoMensal.destroy();
+      window.graficoMensal = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: meses,
+          datasets: [
+            { label: 'A Pagar', data: pagarData, borderColor: '#e74c3c', fill: false },
+            { label: 'A Receber', data: receberData, borderColor: '#27ae60', fill: false }
+          ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
       });
     }
   </script>
