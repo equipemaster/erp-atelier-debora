@@ -285,18 +285,24 @@
     }
 
     function exportarCSV() {
-      let csv = 'Descrição,Valor,Tipo,Data\n';
-      contasTotais.forEach(c => {
-        csv += `${c.descricao},${c.valor},${c.tipo},${c.data || ''}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'contas.csv';
-      a.click();
-      window.URL.revokeObjectURL(url); // Libera o recurso
-    }
+    let csv = 'Descrição,Valor,Tipo,Data\n';
+    contasTotais.forEach(c => {
+    csv += `${c.descricao},${c.valor},${c.tipo},${c.data || ''}\n`;
+  });
+
+  // Adiciona o BOM para UTF-8 no início do CSV
+  const BOM = "\uFEFF"; // Unicode Character 'ZERO WIDTH NO-BREAK SPACE' which acts as UTF-8 BOM
+  const finalCsv = BOM + csv;
+
+  // Cria o Blob com o tipo 'text/csv;charset=utf-8'
+  const blob = new Blob([finalCsv], { type: 'text/csv;charset=utf-8' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'contas.csv';
+  a.click();
+  window.URL.revokeObjectURL(url); // Libera o recurso
+}
 
     function editarConta(tipo, id) {
       db.ref(`contas/${tipo}/${id}`).once('value').then(snapshot => {
