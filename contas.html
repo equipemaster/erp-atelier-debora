@@ -96,7 +96,7 @@
   <h1>Financeiro</h1>
   <section>
     <h2>Cadastro de Conta</h2>
-    <input id="descricaoConta" placeholder="Descrição" />
+    <input id="descricaoConta" placeholder="Descrição"/>
     <input type="number" id="valorConta" placeholder="Valor" />
     <select id="tipoConta">
       <option value="pagar">A Pagar</option>
@@ -108,8 +108,6 @@
   <div id="saldoTotal">Saldo Total: R$ 0,00</div>
 
   <canvas id="graficoContas"></canvas>
-  <canvas id="graficoMensal"></canvas>
-
   <section>
     <h2>Lista de Contas</h2>
     <div>
@@ -145,13 +143,16 @@
       authDomain: "erp-atelier-debora.firebaseapp.com",
       databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
       projectId: "erp-atelier-debora",
-      appId: "1:1234567890:web:321abc456def7890"
+      appId: "1:1234567890:web:321abc456def7890" // Substitua pelo seu appId real
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
     let contasTotais = [];
+    // Variáveis globais para as instâncias do Chart
+    let graficoContas = null;
+    // let graficoMensal = null; // REMOVIDO CONFORME SUA SOLICITAÇÃO
 
     auth.onAuthStateChanged(user => {
       if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
@@ -159,7 +160,7 @@
         window.location = 'home.html';
         return;
       }
-      carregarGraficoContas();
+      // Carrega as contas e atualiza tudo após a autenticação
       carregarContas();
     });
 
@@ -169,50 +170,88 @@
       const tipo = document.getElementById('tipoConta').value;
       const data = new Date().toISOString().split('T')[0];
       if (!descricao || isNaN(valor)) return alert('Preencha todos os campos!');
+
       const id = db.ref(`contas/${tipo}`).push().key;
-      db.ref(`contas/${tipo}/${id}`).set({ id, descricao, valor, tipo, data });
-      document.getElementById('descricaoConta').value = '';
-      document.getElementById('valorConta').value = '';
-      document.getElementById('tipoConta').value = 'pagar';
-      carregarGraficoContas();
-      carregarContas();
+      db.ref(`contas/${tipo}/${id}`).set({ id, descricao, valor, tipo, data })
+        .then(() => {
+          document.getElementById('descricaoConta').value = '';
+          document.getElementById('valorConta').value = '';
+          document.getElementById('tipoConta').value = 'pagar';
+          carregarContas(); // Recarrega todas as contas e atualiza o Saldo Total e gráfico
+        })
+        .catch(error => {
+          console.error("Erro ao registrar conta:", error);
+          alert("Erro ao registrar conta. Verifique o console para mais detalhes.");
+        });
     }
 
     function carregarGraficoContas() {
-      let pagar = 0, receber = 0;
-      Promise.all([
-        db.ref('contas/pagar').once('value'),
-        db.ref('contas/receber').once('value')
-      ]).then(([snapPagar, snapReceber]) => {
-        snapPagar.forEach(c => pagar += parseFloat(c.val().valor) || 0);
-        snapReceber.forEach(c => receber += parseFloat(c.val().valor) || 0);
-        document.getElementById('saldoTotal').textContent = `Saldo Total: R$ ${(receber - pagar).toFixed(2)}`;
+      if (graficoContas) { // Verifica se já existe uma instância do gráfico
+        graficoContas.destroy();
+      }
 
-        const ctx = document.getElementById('graficoContas').getContext('2d');
-        if (window.graficoContas) window.graficoContas.destroy();
-        window.graficoContas = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['A Pagar', 'A Receber'],
-            datasets: [{
-              label: 'Contas em R$',
-              data: [pagar, receber],
-              backgroundColor: ['#e74c3c', '#27ae60']
-            }]
-          },
-          options: { responsive: true, scales: { y: { beginAtZero: true } } }
-        });
+      // Calcula os totais de pagar e receber a partir de 'contasTotais'
+      let pagar = 0;
+      let receber = 0;
+      contasTotais.forEach(c => {
+        if (c.tipo === 'pagar') {
+          pagar += parseFloat(c.valor) || 0;
+        } else if (c.tipo === 'receber') {
+          receber += parseFloat(c.valor) || 0;
+        }
+      });
+      
+      const ctx = document.getElementById('graficoContas').getContext('2d');
+      graficoContas = new Chart(ctx, { // Atribui a nova instância à variável global
+        type: 'bar',
+        data: {
+          labels: ['A Pagar', 'A Receber'],
+          datasets: [{
+            label: 'Contas em R$',
+            data: [pagar, receber],
+            backgroundColor: ['#e74c3c', '#27ae60']
+          }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
       });
     }
 
     function carregarContas() {
       contasTotais = [];
-      ['pagar', 'receber'].forEach(tipo => {
-        db.ref(`contas/${tipo}`).once('value').then(snapshot => {
-          snapshot.forEach(c => contasTotais.push(c.val()));
-          filtrarContas();
-          gerarGraficoMensal();
+      const promises = [];
+
+      promises.push(db.ref(`contas/pagar`).once('value'));
+      promises.push(db.ref(`contas/receber`).once('value'));
+
+      Promise.all(promises).then(([snapPagar, snapReceber]) => {
+        snapPagar.forEach(c => {
+          const conta = c.val();
+          conta.id = c.key;
+          contasTotais.push(conta);
         });
+        snapReceber.forEach(c => {
+          const conta = c.val();
+          conta.id = c.key;
+          contasTotais.push(conta);
+        });
+        
+        // Calcular e exibir o saldo total AQUI, após carregar todas as contas
+        let totalPagar = 0;
+        let totalReceber = 0;
+        contasTotais.forEach(conta => {
+          if (conta.tipo === 'pagar') {
+            totalPagar += parseFloat(conta.valor) || 0;
+          } else if (conta.tipo === 'receber') {
+            totalReceber += parseFloat(conta.valor) || 0;
+          }
+        });
+        const saldoGeral = totalReceber - totalPagar;
+        document.getElementById('saldoTotal').textContent = `Saldo Total: R$ ${saldoGeral.toFixed(2)}`;
+
+        filtrarContas(); // Chama após todos os dados serem carregados e o saldo ser calculado
+        carregarGraficoContas(); // Atualiza o gráfico de barras com os novos totais
+      }).catch(error => {
+        console.error("Erro ao carregar contas:", error);
       });
     }
 
@@ -223,6 +262,7 @@
       const fim = document.getElementById('filtroDataFim').value;
       const tabela = document.getElementById('tabelaContas');
       tabela.innerHTML = '';
+
       contasTotais.filter(c => {
         const passaTipo = !tipo || c.tipo === tipo;
         const passaValor = c.valor >= valor;
@@ -254,6 +294,7 @@
       a.href = url;
       a.download = 'contas.csv';
       a.click();
+      window.URL.revokeObjectURL(url); // Libera o recurso
     }
 
     function editarConta(tipo, id) {
@@ -261,49 +302,32 @@
         const conta = snapshot.val();
         const novaDescricao = prompt('Nova descrição:', conta.descricao);
         const novoValor = prompt('Novo valor:', conta.valor);
-        if (novaDescricao && !isNaN(novoValor)) {
-          db.ref(`contas/${tipo}/${id}`).update({ descricao: novaDescricao, valor: parseFloat(novoValor) });
-          carregarContas();
-          carregarGraficoContas();
+        if (novaDescricao && !isNaN(parseFloat(novoValor))) {
+          db.ref(`contas/${tipo}/${id}`).update({ descricao: novaDescricao, valor: parseFloat(novoValor) })
+            .then(() => {
+              carregarContas(); // Recarrega todas as contas e atualiza tudo
+            })
+            .catch(error => {
+              console.error("Erro ao editar conta:", error);
+              alert("Erro ao editar conta. Verifique o console para mais detalhes.");
+            });
+        } else if (novaDescricao !== null || novoValor !== null) {
+          alert("Valores inválidos. A edição foi cancelada.");
         }
       });
     }
 
     function excluirConta(tipo, id) {
       if (confirm('Deseja excluir esta conta?')) {
-        db.ref(`contas/${tipo}/${id}`).remove().then(() => {
-          carregarContas();
-          carregarGraficoContas();
-        });
+        db.ref(`contas/${tipo}/${id}`).remove()
+          .then(() => {
+            carregarContas(); // Recarrega todas as contas e atualiza tudo
+          })
+          .catch(error => {
+            console.error("Erro ao excluir conta:", error);
+            alert("Erro ao excluir conta. Verifique o console para mais detalhes.");
+          });
       }
-    }
-
-    function gerarGraficoMensal() {
-      const dadosPorMes = {};
-      contasTotais.forEach(c => {
-        if (!c.data) return;
-        const mes = c.data.substring(0, 7);
-        if (!dadosPorMes[mes]) dadosPorMes[mes] = { pagar: 0, receber: 0 };
-        dadosPorMes[mes][c.tipo] += parseFloat(c.valor);
-      });
-
-      const meses = Object.keys(dadosPorMes).sort();
-      const pagarData = meses.map(m => dadosPorMes[m].pagar);
-      const receberData = meses.map(m => dadosPorMes[m].receber);
-
-      const ctx = document.getElementById('graficoMensal').getContext('2d');
-      if (window.graficoMensal) window.graficoMensal.destroy();
-      window.graficoMensal = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: meses,
-          datasets: [
-            { label: 'A Pagar', data: pagarData, borderColor: '#e74c3c', fill: false },
-            { label: 'A Receber', data: receberData, borderColor: '#27ae60', fill: false }
-          ]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-      });
     }
   </script>
 </body>
