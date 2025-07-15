@@ -1,32 +1,44 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Produtos - Ateliê Débora Freitas</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Produtos - Ateliê Débora Freitas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <style>
     body {
       font-family: 'Playfair Display', serif;
       background-color: #0d2d0e;
       color: #fff;
-      text-align: center;
       padding: 2rem;
     }
-    h1, h2 {
+    h1 {
+      text-align: center;
       color: #c7a17a;
     }
-    input, button {
-      margin: 0.5rem;
-      padding: 0.6rem;
-      border-radius: 4px;
-      border: none;
+    input, select, textarea, button {
+  margin: 0.5rem;
+  padding: 0.6rem;
+  border-radius: 4px;
+  border: none;
+  display: inline-block;
+  vertical-align: top; /* <-- Adicionado para alinhamento */
+}
+
+    input[type="file"] {
+      padding: 0.3rem;
+      background: #fff;
+      color: #333;
     }
-    input {
+    input, select, textarea {
       width: 200px;
+    }
+    textarea {
+      height: 80px;
     }
     button {
       background-color: #c7a17a;
@@ -35,6 +47,26 @@
     }
     button:hover {
       background-color: #a87b51;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      color: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #c7a17a;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
     }
     .voltar {
       margin-top: 2rem;
@@ -49,70 +81,262 @@
     .voltar:hover {
       background: #a87b51;
     }
+    .filtros, .paginacao, .acoes {
+      margin: 1rem 0;
+    }
+    .paginacao button {
+      margin: 0 4px;
+      background: #c7a17a;
+    }
+    .acoes button i {
+      margin-right: 6px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .modal-content {
+      background-color: #fff;
+      color: #333;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .modal-content button {
+      margin: 10px;
+    }
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      td {
+        position: relative;
+        padding-left: 50%;
+      }
+      td::before {
+        position: absolute;
+        top: 12px;
+        left: 16px;
+        white-space: nowrap;
+        font-weight: bold;
+        color: #555;
+      }
+      td:nth-of-type(1)::before { content: "Produto"; }
+      td:nth-of-type(2)::before { content: "Estoque"; }
+      td:nth-of-type(3)::before { content: "Ações"; }
+    }
   </style>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
-      authDomain: "erp-atelier-debora.firebaseapp.com",
-      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
-      projectId: "erp-atelier-debora",
-      appId: "1:1234567890:web:321abc456def7890"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
-
-    auth.onAuthStateChanged(user => {
-      if (!user) window.location = 'index.html';
-    });
-
-    function cadastrarProduto() {
-      const nome = document.getElementById('nomeProduto').value.trim();
-      const estoque = parseInt(document.getElementById('estoqueProduto').value);
-      if (!nome || isNaN(estoque)) return alert('Preencha!');
-
-      db.ref('produtos').once('value').then(snapshot => {
-        let duplicado = false;
-        snapshot.forEach(p => {
-          if (p.val().nome.toLowerCase() === nome.toLowerCase()) {
-            duplicado = true;
-          }
-        });
-        if (duplicado) {
-          alert('Produto já cadastrado!');
-        } else {
-          const id = db.ref('produtos').push().key;
-          db.ref('produtos/' + id).set({ nome, estoque });
-          document.getElementById('nomeProduto').value = '';
-          document.getElementById('estoqueProduto').value = '';
-          carregarProdutos();
-        }
-      });
-    }
-
-    function carregarProdutos() {
-      db.ref('produtos').once('value').then(s => {
-        const c = document.getElementById('lista-produtos');
-        c.innerHTML = '';
-        s.forEach(p => {
-          const d = p.val();
-          c.innerHTML += `<div>${d.nome} – ${d.estoque}</div>`;
-        });
-      });
-    }
-
-    window.onload = carregarProdutos;
-  </script>
 </head>
 <body>
   <h1>Cadastro de Produtos</h1>
-  <input id="nomeProduto" placeholder="Nome do produto">
-  <input type="number" id="estoqueProduto" placeholder="Quantidade">
-  <button onclick="cadastrarProduto()">Cadastrar</button>
+  <div class="form-container">
+    <input id="nomeProduto" placeholder="Nome do produto">
+    <input type="number" id="estoqueProduto" placeholder="Quantidade">
+    <select id="unidadeProduto">
+      <option value="Unidade">Unidade</option>
+      <option value="Metro">Metro</option>
+    </select>
+    <input id="categoriaProduto" placeholder="Categoria">
+    <textarea id="descricaoProduto" placeholder="Descrição"></textarea>
+    <input type="file" id="imagemProduto">
+    <button onclick="cadastrarProduto()"><i class="fas fa-plus"></i> Cadastrar</button>
+  </div>
 
-  <h2>Lista de Produtos</h2>
-  <div id="lista-produtos"></div>
+  <div class="filtros">
+    <input type="text" id="filtroNome" placeholder="Pesquisar por nome...">
+    <input type="number" id="filtroEstoque" placeholder="Filtrar por estoque...">
+  </div>
 
-  <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+  <div class="acoes">
+    <button onclick="exportarCSV()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+    <button onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Estoque</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tbody-produtos"></tbody>
+  </table>
+
+  <div class="paginacao" id="paginacao"></div>
+
+  <div class="modal" id="modal-confirmacao">
+    <div class="modal-content">
+      <p>Tem certeza que deseja excluir este produto?</p>
+      <button onclick="confirmarExclusao()">Sim</button>
+      <button onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <div style="text-align:center">
+    <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+  </div>
+
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+    authDomain: "erp-atelier-debora.firebaseapp.com",
+    databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+    projectId: "erp-atelier-debora",
+    storageBucket: "erp-atelier-debora.appspot.com",
+    appId: "1:1234567890:web:321abc456def7890"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+  const storage = firebase.storage();
+
+  let produtosCarregados = [];
+  let paginaAtual = 1;
+  const itensPorPagina = 5;
+  let idParaExcluir = null;
+
+  auth.onAuthStateChanged(user => {
+    if (!user) window.location = 'index.html';
+  });
+
+  function cadastrarProduto() {
+    const nome = document.getElementById('nomeProduto').value.trim();
+    const estoque = parseInt(document.getElementById('estoqueProduto').value);
+    const unidade = document.getElementById('unidadeProduto').value;
+    const categoria = document.getElementById('categoriaProduto').value.trim();
+    const descricao = document.getElementById('descricaoProduto').value.trim();
+    const file = document.getElementById('imagemProduto').files[0];
+
+    if (!nome || isNaN(estoque) || !categoria) return alert('Preencha todos os campos!');
+
+    const id = db.ref('produtos').push().key;
+    const produtoData = { id, nome, estoque, unidade, categoria, descricao, imagemURL: '' };
+
+    if (file) {
+      const storageRef = storage.ref(`produtos/${id}/${file.name}`);
+      storageRef.put(file).then(snapshot =>
+        snapshot.ref.getDownloadURL().then(url => {
+          produtoData.imagemURL = url;
+          salvarProduto(id, produtoData);
+        })
+      );
+    } else {
+      salvarProduto(id, produtoData);
+    }
+  }
+
+  function salvarProduto(id, data) {
+    db.ref('produtos/' + id).set(data).then(() => {
+      alert('Produto cadastrado com sucesso!');
+      document.querySelectorAll('#nomeProduto, #estoqueProduto, #categoriaProduto, #descricaoProduto').forEach(el => el.value = '');
+      document.getElementById('imagemProduto').value = '';
+      carregarProdutos();
+    });
+  }
+
+  function abrirModal(id) {
+    idParaExcluir = id;
+    document.getElementById('modal-confirmacao').style.display = 'block';
+  }
+
+  function fecharModal() {
+    idParaExcluir = null;
+    document.getElementById('modal-confirmacao').style.display = 'none';
+  }
+
+  function confirmarExclusao() {
+    if (idParaExcluir) {
+      db.ref('produtos/' + idParaExcluir).remove();
+      fecharModal();
+      carregarProdutos();
+    }
+  }
+
+  function carregarProdutos() {
+    db.ref('produtos').once('value').then(s => {
+      produtosCarregados = [];
+      s.forEach(p => {
+        produtosCarregados.push(p.val());
+      });
+      aplicarFiltros();
+    });
+  }
+
+  function aplicarFiltros() {
+    const filtroNome = document.getElementById('filtroNome').value.toLowerCase();
+    const filtroEstoque = document.getElementById('filtroEstoque').value;
+    const produtosFiltrados = produtosCarregados.filter(p => {
+      const matchNome = p.nome.toLowerCase().includes(filtroNome);
+      const matchEstoque = !filtroEstoque || p.estoque == filtroEstoque;
+      return matchNome && matchEstoque;
+    });
+    exibirPaginacao(produtosFiltrados);
+  }
+
+  function exibirPaginacao(lista) {
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const pagina = lista.slice(inicio, fim);
+    const tbody = document.getElementById('tbody-produtos');
+    tbody.innerHTML = '';
+    pagina.forEach(p => {
+      tbody.innerHTML += `
+        <tr>
+          <td><img src="${p.imagemURL || 'placeholder.png'}" alt="${p.nome}" width="50" style="vertical-align:middle; margin-right:8px;">${p.nome}<br><small>${p.categoria}</small></td>
+          <td>${p.estoque} ${p.unidade}</td>
+          <td>
+            <button onclick="editarProduto('${p.id}')"><i class="fas fa-edit"></i></button>
+            <button onclick="abrirModal('${p.id}')"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>`;
+    });
+    const totalPaginas = Math.ceil(lista.length / itensPorPagina);
+    const paginacaoDiv = document.getElementById('paginacao');
+    paginacaoDiv.innerHTML = '';
+    for (let i = 1; i <= totalPaginas; i++) {
+      paginacaoDiv.innerHTML += `<button onclick="mudarPagina(${i})">${i}</button>`;
+    }
+  }
+
+  function mudarPagina(p) {
+    paginaAtual = p;
+    aplicarFiltros();
+  }
+
+  function exportarCSV() {
+    let csv = 'Produto,Estoque,Unidade,Categoria,Descrição\n';
+    produtosCarregados.forEach(p => {
+      csv += `${p.nome},${p.estoque},${p.unidade},${p.categoria},${p.descricao}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'produtos.csv');
+    a.click();
+  }
+
+  window.onload = () => {
+    carregarProdutos();
+    document.getElementById('filtroNome').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtroEstoque').addEventListener('input', aplicarFiltros);
+  };
+</script>
+
 </body>
 </html>
