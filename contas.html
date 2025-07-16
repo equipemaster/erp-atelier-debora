@@ -77,14 +77,30 @@
       background-color: #c7a17a;
       color: white;
     }
-    #saldoTotal {
+    #saldoTotal, #saldoExtratoCalculado {
       font-size: 1.3rem;
       font-weight: bold;
       margin-top: 1rem;
       color: #27ae60;
     }
+    #saldoInicialManual {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #3498db; 
+        margin-top: 0.5rem;
+    }
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 1rem;
+    }
+    .input-group input[type="number"] {
+        margin-bottom: 10px;
+    }
+
     @media (max-width: 600px) {
-      input, select, button {
+      input, select, button, .input-group input {
         width: 100%;
         max-width: 100%;
       }
@@ -108,6 +124,16 @@
   </section>
 
   <div id="saldoTotal">Saldo Total: R$ 0,00</div>
+
+  <section>
+    <h2>Saldo Inicial da Conta Bancária</h2>
+    <div class="input-group">
+        <input type="number" id="manualInitialBalance" placeholder="Insira o Saldo Inicial (ex: 1500.50)" step="0.01" />
+        <button onclick="saveInitialBalance()">Salvar Saldo Inicial</button>
+    </div>
+    <div id="saldoInicialManual">Saldo Inicial Informado: R$ 0,00</div>
+    <div id="saldoExtratoCalculado">Saldo Final Calculado: R$ 0,00</div>
+  </section>
 
   <canvas id="graficoContas"></canvas>
   <section>
@@ -152,9 +178,8 @@
     const db = firebase.database();
 
     let contasTotais = [];
-    // Variáveis globais para as instâncias do Chart
     let graficoContas = null;
-    // let graficoMensal = null; // REMOVIDO CONFORME SUA SOLICITAÇÃO
+    let currentInitialBalance = 0; // Variável para armazenar o saldo inicial manualmente inserido
 
     auth.onAuthStateChanged(user => {
       if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
@@ -162,9 +187,71 @@
         window.location = 'home.html';
         return;
       }
-      // Carrega as contas e atualiza tudo após a autenticação
+      loadInitialBalance(); // Carrega o saldo inicial salvo
       carregarContas();
     });
+
+    // Função para salvar o saldo inicial manualmente
+    function saveInitialBalance() {
+        const inputBalance = parseFloat(document.getElementById('manualInitialBalance').value);
+        if (!isNaN(inputBalance)) {
+            db.ref('settings/initialBalance').set(inputBalance)
+                .then(() => {
+                    currentInitialBalance = inputBalance;
+                    document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ ${currentInitialBalance.toFixed(2)}`;
+                    updateCalculatedExtratoBalance(); // Atualiza o saldo calculado
+                    alert('Saldo inicial salvo com sucesso!');
+                })
+                .catch(error => {
+                    console.error("Erro ao salvar saldo inicial:", error);
+                    alert("Erro ao salvar saldo inicial. Verifique o console.");
+                });
+        } else {
+            alert('Por favor, insira um valor numérico válido para o saldo inicial.');
+        }
+    }
+
+    // Função para carregar o saldo inicial salvo
+    function loadInitialBalance() {
+        db.ref('settings/initialBalance').once('value')
+            .then(snapshot => {
+                const savedBalance = snapshot.val();
+                if (typeof savedBalance === 'number') {
+                    currentInitialBalance = savedBalance;
+                    document.getElementById('manualInitialBalance').value = savedBalance.toFixed(2);
+                    document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ ${currentInitialBalance.toFixed(2)}`;
+                } else {
+                    currentInitialBalance = 0; // Padrão se não houver saldo salvo
+                    document.getElementById('manualInitialBalance').value = '';
+                    document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ 0,00`;
+                }
+                updateCalculatedExtratoBalance(); // Atualiza o saldo calculado ao carregar
+            })
+            .catch(error => {
+                console.error("Erro ao carregar saldo inicial:", error);
+                currentInitialBalance = 0;
+                document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: Erro`;
+                updateCalculatedExtratoBalance();
+            });
+    }
+
+    // Função para atualizar o saldo final calculado do "extrato" (a partir do saldo inicial + transações)
+    function updateCalculatedExtratoBalance() {
+        let totalPayments = 0;
+        let totalReceives = 0;
+
+        contasTotais.forEach(c => {
+            if (c.tipo === 'pagar') {
+                totalPayments += parseFloat(c.valor) || 0;
+            } else if (c.tipo === 'receber') {
+                totalReceives += parseFloat(c.valor) || 0;
+            }
+        });
+
+        // O saldo final calculado é o saldo inicial manual + recebimentos - pagamentos
+        const calculatedFinalBalance = currentInitialBalance + totalReceives - totalPayments;
+        document.getElementById('saldoExtratoCalculado').textContent = `Saldo Final Calculado: R$ ${calculatedFinalBalance.toFixed(2)}`;
+    }
 
     function registrarConta() {
       const descricao = document.getElementById('descricaoConta').value;
@@ -179,7 +266,7 @@
           document.getElementById('descricaoConta').value = '';
           document.getElementById('valorConta').value = '';
           document.getElementById('tipoConta').value = 'pagar';
-          carregarContas(); // Recarrega todas as contas e atualiza o Saldo Total e gráfico
+          carregarContas();
         })
         .catch(error => {
           console.error("Erro ao registrar conta:", error);
@@ -188,11 +275,10 @@
     }
 
     function carregarGraficoContas() {
-      if (graficoContas) { // Verifica se já existe uma instância do gráfico
+      if (graficoContas) {
         graficoContas.destroy();
       }
 
-      // Calcula os totais de pagar e receber a partir de 'contasTotais'
       let pagar = 0;
       let receber = 0;
       contasTotais.forEach(c => {
@@ -204,7 +290,7 @@
       });
       
       const ctx = document.getElementById('graficoContas').getContext('2d');
-      graficoContas = new Chart(ctx, { // Atribui a nova instância à variável global
+      graficoContas = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: ['A Pagar', 'A Receber'],
@@ -237,7 +323,6 @@
           contasTotais.push(conta);
         });
         
-        // Calcular e exibir o saldo total AQUI, após carregar todas as contas
         let totalPagar = 0;
         let totalReceber = 0;
         contasTotais.forEach(conta => {
@@ -250,8 +335,9 @@
         const saldoGeral = totalReceber - totalPagar;
         document.getElementById('saldoTotal').textContent = `Saldo Total: R$ ${saldoGeral.toFixed(2)}`;
 
-        filtrarContas(); // Chama após todos os dados serem carregados e o saldo ser calculado
-        carregarGraficoContas(); // Atualiza o gráfico de barras com os novos totais
+        filtrarContas();
+        carregarGraficoContas();
+        updateCalculatedExtratoBalance(); // Chamar aqui também para garantir que o saldo calculado seja atualizado após carregar as contas
       }).catch(error => {
         console.error("Erro ao carregar contas:", error);
       });
@@ -286,24 +372,22 @@
     }
 
     function exportarCSV() {
-    let csv = 'Descrição,Valor,Tipo,Data\n';
-    contasTotais.forEach(c => {
-    csv += `${c.descricao},${c.valor},${c.tipo},${c.data || ''}\n`;
-  });
+      let csv = 'Descrição,Valor,Tipo,Data\n';
+      contasTotais.forEach(c => {
+        csv += `${c.descricao},${c.valor},${c.tipo},${c.data || ''}\n`;
+      });
 
-  // Adiciona o BOM para UTF-8 no início do CSV
-  const BOM = "\uFEFF"; // Unicode Character 'ZERO WIDTH NO-BREAK SPACE' which acts as UTF-8 BOM
-  const finalCsv = BOM + csv;
+      const BOM = "\uFEFF";
+      const finalCsv = BOM + csv;
 
-  // Cria o Blob com o tipo 'text/csv;charset=utf-8'
-  const blob = new Blob([finalCsv], { type: 'text/csv;charset=utf-8' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'contas.csv';
-  a.click();
-  window.URL.revokeObjectURL(url); // Libera o recurso
-}
+      const blob = new Blob([finalCsv], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contas.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
 
     function editarConta(tipo, id) {
       db.ref(`contas/${tipo}/${id}`).once('value').then(snapshot => {
@@ -313,7 +397,7 @@
         if (novaDescricao && !isNaN(parseFloat(novoValor))) {
           db.ref(`contas/${tipo}/${id}`).update({ descricao: novaDescricao, valor: parseFloat(novoValor) })
             .then(() => {
-              carregarContas(); // Recarrega todas as contas e atualiza tudo
+              carregarContas();
             })
             .catch(error => {
               console.error("Erro ao editar conta:", error);
@@ -329,7 +413,7 @@
       if (confirm('Deseja excluir esta conta?')) {
         db.ref(`contas/${tipo}/${id}`).remove()
           .then(() => {
-            carregarContas(); // Recarrega todas as contas e atualiza tudo
+            carregarContas();
           })
           .catch(error => {
             console.error("Erro ao excluir conta:", error);
@@ -337,6 +421,7 @@
           });
       }
     }
+
   </script>
 </body>
 </html>
