@@ -316,7 +316,9 @@
             appId: "1:1234567890:web:321abc456def7890" // Este ID é apenas um exemplo. Use o seu real.
         };
         firebase.initializeApp(firebaseConfig);
+         const auth = firebase.auth();
         const db = firebase.database();
+        
 
         // Etapas do Kanban em ordem lógica, incluindo "Finalizado"
         const etapasKanban = [
