@@ -228,6 +228,14 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+     auth.onAuthStateChanged(user => {
+      
+       if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
+        alert('Acesso restrito. Redirecionando...');
+       window.location = 'home.html';
+        return;
+      }
+    });
 
     let contasTotais = [];
     let saidasAvulsasTotais = []; // Nova variável para saídas avulsas
