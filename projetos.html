@@ -510,12 +510,11 @@
 
         // Função para desenhar o histórico de projetos finalizados em formato de tabela (reescrita)
         function desenharHistorico() {
-            const historicoContainer = document.getElementById('historicoContainer');
-            historicoContainer.innerHTML = ''; // Limpa o container antes de redesenhar
+    const historicoContainer = document.getElementById('historicoContainer');
 
-            db.ref('projetos').on('value', (snapshot) => {
-                const projetos = snapshot.val();
-                let projetosFinalizados = [];
+    db.ref('projetos').on('value', (snapshot) => {
+        historicoContainer.innerHTML = ''; // Limpa o container DENTRO do callback
+
 
                 if (projetos) {
                     Object.keys(projetos).forEach(key => {
