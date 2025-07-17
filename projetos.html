@@ -266,10 +266,7 @@
             <option value="Prova">Prova</option>
             <option value="Ajuste">Ajuste</option>
         </select>
-        <div>
-        <text>Data de Entrega:</text>
         <input type="date" id="dataEntrega">
-        </div>
         <input type="time" id="horaEntrega">
         <select id="tipoProjeto">
             <option disabled selected>Tipo</option>
@@ -320,9 +317,8 @@
             appId: "1:1234567890:web:321abc456def7890" // Este ID é apenas um exemplo. Use o seu real.
         };
         firebase.initializeApp(firebaseConfig);
-         const auth = firebase.auth();
+        const auth = firebase.auth();
         const db = firebase.database();
-        
 
         // Etapas do Kanban em ordem lógica, incluindo "Finalizado"
         const etapasKanban = [
@@ -513,11 +509,13 @@
 
         // Função para desenhar o histórico de projetos finalizados em formato de tabela (reescrita)
         function desenharHistorico() {
-    const historicoContainer = document.getElementById('historicoContainer');
+            const historicoContainer = document.getElementById('historicoContainer');
+             // Limpa o container antes de redesenhar
 
-    db.ref('projetos').on('value', (snapshot) => {
-        historicoContainer.innerHTML = ''; // Limpa o container DENTRO do callback
-
+            db.ref('projetos').on('value', (snapshot) => {
+                historicoContainer.innerHTML = '';
+                const projetos = snapshot.val();
+                let projetosFinalizados = [];
 
                 if (projetos) {
                     Object.keys(projetos).forEach(key => {
@@ -528,13 +526,13 @@
                     });
                 }
 
-                if (projetosFinalizados.length === 0) {
-                    const noDataP = document.createElement('p');
-                    noDataP.classList.add('no-data');
-                    noDataP.textContent = 'Nenhum projeto finalizado ainda.';
-                    historicoContainer.appendChild(noDataP);
-                    return;
-                }
+                //if (projetosFinalizados.length === 0) {
+                 //   const noDataP = document.createElement('p');
+                  //  noDataP.classList.add('no-data');
+                  //  noDataP.textContent = 'Nenhum projeto finalizado ainda.';
+                 //   historicoContainer.appendChild(noDataP);
+                 //   return;
+                //}
 
                 // Cria a tabela
                 const table = document.createElement('table');
