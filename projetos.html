@@ -1,328 +1,703 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-   <link rel="icon" href="favicon-16x16.png" type="favicon-16x16.png">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Projetos</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #0d2d0e;
-      color: #fff;
-    }
-    h1 {
-      text-align: center;
-      color: #c7a17a;
-      margin-bottom: 20px;
-    }
-    .cadastro-form {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-      justify-content: center;
-      color: #000;
-    }
-    .cadastro-form input,
-    .cadastro-form select,
-    .cadastro-form button {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-      flex-grow: 1;
-      min-width: 150px;
-      box-sizing: border-box;
-    }
-    .cadastro-form button {
-      background: #c7a17a;
-      color: white;
-      cursor: pointer;
-      border: none;
-      transition: background 0.3s ease;
-    }
-    .cadastro-form button:hover {
-      background: #a87b51;
-    }
-    #kanbanContainer {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      gap: 10px;
-      padding: 0 20px;
-      margin: 20px auto;
-    }
-    #kanbanContainer > div {
-      flex: 0 0 160px;
-      background: #f9f3e7;
-      padding: 10px;
-      border-radius: 6px;
-      overflow-y: auto;
-      height: 400px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      color: #000;
-    }
-    .card {
-      background: #fff;
-      color: #000;
-      padding: 8px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 0.875rem;
-      position: relative;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .card .card-actions {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 5px;
-    }
-    .btn-voltar {
-      margin: 2rem auto;
-      display: block;
-      padding: 10px 20px;
-      background: #c7a17a;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      text-decoration: none;
-      text-align: center;
-      transition: background 0.3s ease;
-    }
-    .btn-voltar:hover {
-      background: #a87b51;
-    }
-    #modalEdicao {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.5);
-    }
-    #modalEdicao .modal-content {
-      background: white;
-      color: #000;
-      margin: 10% auto;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 500px;
-    }
-    #modalEdicao input, #modalEdicao select {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      box-sizing: border-box;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projetos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #0d2d0e;
+            color: #fff;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #c7a17a;
+            margin-bottom: 20px;
+        }
+        .cadastro-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            color: #000;
+        }
+        .cadastro-form input,
+        .cadastro-form select,
+        .cadastro-form button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            flex-grow: 1;
+            min-width: 150px;
+            box-sizing: border-box;
+        }
+        .cadastro-form button {
+            background: #c7a17a;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background 0.3s ease;
+        }
+        .cadastro-form button:hover {
+            background: #a87b51;
+        }
+        #kanbanContainer {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto; /* Habilita rolagem horizontal */
+            gap: 10px;
+            padding: 0 20px;
+            margin: 20px auto;
+            max-width: 100%; /* Garante que o container não exceda a largura da tela */
+        }
+        #kanbanContainer > div {
+            flex: 0 0 160px; /* Largura fixa para as colunas */
+            background: #f9f3e7;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-y: auto; /* Rolagem vertical para os cards dentro da coluna */
+            height: 400px; /* Altura fixa para as colunas */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #000;
+            display: flex; /* Para flex-direction column */
+            flex-direction: column;
+        }
+        #kanbanContainer > div h3 {
+            text-align: center;
+            margin-top: 0;
+            color: #555;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            flex-shrink: 0; /* Impede que o título encolha */
+        }
+        .card {
+            background: #fff;
+            color: #000;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            flex-shrink: 0; /* Impede que o card encolha */
+        }
+        .card .card-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            gap: 5px; /* Espaçamento entre os botões */
+        }
+        .card .card-actions button {
+            flex-grow: 1; /* Faz os botões ocuparem o espaço disponível */
+            padding: 5px 8px;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+            background-color: #c7a17a; /* Cor padrão para botões de ação */
+            color: white;
+            transition: background-color 0.2s ease;
+        }
+        .card .card-actions button:hover {
+            background-color: #a87b51;
+        }
+        /* Cores específicas para botões de ação */
+        .card .card-actions button[onclick*="avancarEtapa"] { background-color: #28a745; } /* Verde */
+        .card .card-actions button[onclick*="deletarProjeto"] { background-color: #dc3545; } /* Vermelho */
+        .card .card-actions button[onclick*="restaurarProjeto"] { background-color: #007bff; } /* Azul */
+        .card .card-actions button[onclick*="marcarComoFinalizado"] { background-color: #ffc107; color: #333;} /* Amarelo para Finalizar */
+
+        .btn-voltar {
+            margin: 2rem auto;
+            display: block;
+            padding: 10px 20px;
+            background: #c7a17a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+        .btn-voltar:hover {
+            background: #a87b51;
+        }
+        #modalEdicao {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            padding-top: 50px;
+        }
+        #modalEdicao .modal-content {
+            background: white;
+            color: #000;
+            margin: 5% auto;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        #modalEdicao input, #modalEdicao select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #modalEdicao button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #c7a17a;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        #modalEdicao button:hover {
+            background-color: #a87b51;
+        }
+        #modalEdicao button:last-child {
+            background-color: #6c757d;
+        }
+        #modalEdicao button:last-child:hover {
+            background-color: #5a6268;
+        }
+
+        /* Estilos para a tabela de histórico */
+        #historicoContainer {
+            overflow-x: auto; /* Permite rolagem horizontal se a tabela for muito larga */
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        #historicoContainer table {
+            width: 100%; /* Ocupa a largura total do container */
+            border-collapse: collapse;
+            background-color: #f9f3e7;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 8px; /* Borda arredondada para a tabela */
+            overflow: hidden; /* Garante que o border-radius funcione */
+        }
+        #historicoContainer th, #historicoContainer td {
+            border: 1px solid #e0e0e0; /* Borda mais suave */
+            padding: 12px 15px; /* Mais padding para melhor leitura */
+            text-align: left;
+            font-size: 0.95rem; /* Um pouco maior */
+            vertical-align: top; /* Alinha o conteúdo ao topo das células */
+        }
+        #historicoContainer th {
+            background-color: #c7a17a; /* Cor do seu tema */
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            white-space: nowrap; /* Evita que o texto do cabeçalho quebre */
+        }
+        #historicoContainer tbody tr:nth-child(even) {
+            background-color: #f8f8f8; /* Linhas zebradas mais claras */
+        }
+        #historicoContainer tbody tr:hover {
+            background-color: #e6e6e6; /* Efeito hover mais suave */
+        }
+        #historicoContainer .historico-actions button {
+            padding: 6px 12px;
+            margin-right: 8px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+        }
+        #historicoContainer .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #ccc;
+            font-style: italic;
+            background-color: #f9f3e7;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 95%;
+            color: #555;
+        }
+        #historicoContainer ul {
+            list-style: none; /* Remove bullet points */
+            padding: 0;
+            margin: 0;
+        }
+        #historicoContainer li {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+    </style>
 </head>
 <body>
-  <h1>Projetos</h1>
-  <div class="cadastro-form">
-    <input type="text" id="nomeProjeto" placeholder="Nome do projeto">
-    <select id="statusInicial">
-      <option disabled selected>Selecione a etapa inicial</option>
-      <option value="Croqui">Croqui</option>
-      <option value="Modelagem">Modelagem</option>
-      <option value="Corte">Corte</option>
-      <option value="Costura">Costura</option>
-      <option value="Prova">Prova</option>
-      <option value="Ajuste">Ajuste</option>
-    </select>
-    <input type="date" id="dataEntrega">
-    <input type="time" id="horaEntrega">
-    <select id="tipoProjeto">
-      <option disabled selected>Tipo</option>
-      <option>Noiva - Sob Medida</option>
-      <option>Noiva - Locação</option>
-      <option>Festa - Sob Medida</option>
-        <option>Festa - Locação</option>
-      <option>Casual</option>
-    </select>
-    <button onclick="cadastrarProjeto()">Cadastrar</button>
-  </div>
-
-  <div id="kanbanContainer"></div>
-  <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
-
-  <div id="modalEdicao">
-    <div class="modal-content">
-      <h3>Editar Projeto</h3>
-      <input type="hidden" id="editId">
-      <input type="text" id="editNome" placeholder="Nome do projeto">
-      <input type="date" id="editData">
-      <input type="time" id="editHora">
-      <select id="editTipo">
-        <option>Noiva - Sob Medida</option>
-        <option>Noiva - Locação</option>
-        <option>Festa - Sob Medida</option>
-        <option>Casual</option>
-      </select>
-      <button onclick="salvarEdicao()">Salvar</button>
-      <button onclick="document.getElementById('modalEdicao').style.display='none'">Cancelar</button>
+    <h1>Projetos</h1>
+    <div class="cadastro-form">
+        <input type="text" id="nomeProjeto" placeholder="Nome do projeto">
+        <select id="statusInicial">
+            <option disabled selected>Selecione a etapa inicial</option>
+            <option value="Croqui">Croqui</option>
+            <option value="Modelagem">Modelagem</option>
+            <option value="Corte">Corte</option>
+            <option value="Costura">Costura</option>
+            <option value="Prova">Prova</option>
+            <option value="Ajuste">Ajuste</option>
+        </select>
+        <input type="date" id="dataEntrega">
+        <input type="time" id="horaEntrega">
+        <select id="tipoProjeto">
+            <option disabled selected>Tipo</option>
+            <option>Noiva - Sob Medida</option>
+            <option>Noiva - Locacao</option>
+            <option>Festa - Sob Medida</option>
+            <option>Casual</option>
+        </select>
+        <button onclick="cadastrarProjeto()">Cadastrar</button>
     </div>
-  </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
-      authDomain: "erp-atelier-debora.firebaseapp.com",
-      databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
-      projectId: "erp-atelier-debora",
-      appId: "1:252603842873:web:abcd1234efgh5678"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const auth = firebase.auth();
-   
-    function cadastrarProjeto() {
-      const nome = document.getElementById('nomeProjeto').value.trim();
-      const status = document.getElementById('statusInicial').value;
-      const data = document.getElementById('dataEntrega').value;
-      const hora = document.getElementById('horaEntrega').value;
-      const tipo = document.getElementById('tipoProjeto').value;
+    <div id="kanbanContainer"></div>
 
-      if (!nome || !status || !data || !hora || tipo === 'Tipo') {
-        alert('Preencha todos os campos.');
-        return;
-      }
+    ---
 
-      const projeto = {
-        nome,
-        statusAtual: status,
-        dataEntrega: data,
-        horaEntrega: hora,
-        tipoProjeto: tipo,
-        etapas: [{ nome: status, inicio: Date.now(), concluido: false }]
-      };
+    <h2>Histórico de Projetos Finalizados</h2>
+    <div id="historicoContainer"></div> <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
 
-      db.ref('projetos').push(projeto).then(() => {
-        alert('Projeto cadastrado!');
-        document.querySelector('.cadastro-form').reset();
-        desenharKanban();
-      });
-    }
-
-    function desenharKanban() {
-      const colunas = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
-      const kanban = document.getElementById('kanbanContainer');
-      kanban.innerHTML = '';
-      colunas.forEach(c => {
-        const coluna = document.createElement('div');
-        coluna.innerHTML = `<h3>${c}</h3><div id="coluna-${c}"></div>`;
-        kanban.appendChild(coluna);
-      });
-
-      db.ref('projetos').on('value', snapshot => {
-        colunas.forEach(c => {
-          document.getElementById(`coluna-${c}`).innerHTML = '';
-        });
-        snapshot.forEach(proj => {
-          const id = proj.key;
-          const dados = proj.val();
-          const etapaAtual = dados.etapas.find(e => !e.concluido) || dados.etapas[dados.etapas.length - 1];
-
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `
-            <strong>${dados.nome}</strong><br>
-            Entrega: ${dados.dataEntrega} às ${dados.horaEntrega}<br>
-            Tipo: ${dados.tipoProjeto}<br>
-            Etapa: ${etapaAtual.nome}<br>
-            <select onchange="mudarStatus('${id}', this)">
-              <option value="em andamento" ${etapaAtual.concluido ? '' : 'selected'}>Em andamento</option>
-              <option value="concluido" ${etapaAtual.concluido ? 'selected' : ''}>Concluído</option>
+    <div id="modalEdicao">
+        <div class="modal-content">
+            <h3>Editar Projeto</h3>
+            <input type="hidden" id="editId">
+            <label for="editNome">Nome do Projeto:</label>
+            <input type="text" id="editNome" placeholder="Nome do projeto">
+            <label for="editData">Data de Entrega:</label>
+            <input type="date" id="editData">
+            <label for="editHora">Hora de Entrega:</label>
+            <input type="time" id="editHora">
+            <label for="editTipo">Tipo de Projeto:</label>
+            <select id="editTipo">
+                <option>Noiva - Sob Medida</option>
+                <option>Noiva - Locacao</option>
+                <option>Festa - Sob Medida</option>
+                <option>Casual</option>
             </select>
-            <div class="card-actions">
-              <button class="edit-btn" onclick="editarProjeto('${id}')">Editar</button>
-              <button class="delete-btn" onclick="excluirProjeto('${id}')">Excluir</button>
-            </div>
-          `;
-          const coluna = document.getElementById(`coluna-${etapaAtual.nome}`);
-          if (coluna) coluna.appendChild(card);
-        });
-      });
-    }
+            <button onclick="salvarEdicao()">Salvar</button>
+            <button onclick="document.getElementById('modalEdicao').style.display='none'">Cancelar</button>
+        </div>
+    </div>
 
-    function mudarStatus(id, select) {
-      const valor = select.value;
-      db.ref(`projetos/${id}`).once('value').then(snapshot => {
-        const projeto = snapshot.val();
-        if (!projeto) return;
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQr7d8DVtzWPPSIAYo1cQg9Swc8IETT3I",
+            authDomain: "erp-atelier-debora.firebaseapp.com",
+            databaseURL: "https://erp-atelier-debora-default-rtdb.firebaseio.com",
+            projectId: "erp-atelier-debora",
+            appId: "1:1234567890:web:321abc456def7890" // Este ID é apenas um exemplo. Use o seu real.
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        const etapaAtual = projeto.etapas.find(e => !e.concluido);
-        if (!etapaAtual) return;
+        // Etapas do Kanban em ordem lógica, incluindo "Finalizado"
+        const etapasKanban = [
+            "Croqui",
+            "Modelagem",
+            "Corte",
+            "Costura",
+            "Prova",
+            "Ajuste",
+            "Finalizado"
+        ];
 
-        if (valor === 'concluido') {
-          etapaAtual.concluido = true;
-          const index = projeto.etapas.findIndex(e => e === etapaAtual);
-          const proximas = ['Croqui','Modelagem','Corte','Costura','Prova','Ajuste','Finalizado'];
-          const proxima = proximas[index + 1];
-          if (proxima) {
-            projeto.etapas.push({ nome: proxima, inicio: Date.now(), concluido: false });
-            projeto.statusAtual = proxima;
-          }
-          db.ref(`projetos/${id}`).update(projeto);
+        // Função para formatar milissegundos em HH:MM:SS
+        function formatarTempo(ms) {
+            if (ms === null || isNaN(ms) || ms < 0) return "00h 00m 00s"; // Garante que não exiba N/A ou valores negativos
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const pad = (num) => num.toString().padStart(2, '0');
+            return `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
         }
-      });
-    }
 
-    function excluirProjeto(id) {
-      if (confirm('Deseja excluir o projeto?')) {
-        db.ref('projetos/' + id).remove();
-      }
-    }
+        // Função para cadastrar um novo projeto
+        function cadastrarProjeto() {
+            const nome = document.getElementById('nomeProjeto').value.trim();
+            const status = document.getElementById('statusInicial').value;
+            const data = document.getElementById('dataEntrega').value;
+            const hora = document.getElementById('horaEntrega').value;
+            const tipo = document.getElementById('tipoProjeto').value;
 
-    function editarProjeto(id) {
-      db.ref(`projetos/${id}`).once('value').then(snapshot => {
-        const p = snapshot.val();
-        if (!p) return;
-        document.getElementById('editId').value = id;
-        document.getElementById('editNome').value = p.nome;
-        document.getElementById('editData').value = p.dataEntrega;
-        document.getElementById('editHora').value = p.horaEntrega;
-        document.getElementById('editTipo').value = p.tipoProjeto;
-        document.getElementById('modalEdicao').style.display = 'block';
-      });
-    }
+            // Validação simples
+            if (!nome || status === 'Selecione a etapa inicial' || !data || !hora || tipo === 'Tipo') {
+                alert('Por favor, preencha todos os campos para cadastrar o projeto.');
+                return;
+            }
 
-    function salvarEdicao() {
-      const id = document.getElementById('editId').value;
-      const nome = document.getElementById('editNome').value;
-      const data = document.getElementById('editData').value;
-      const hora = document.getElementById('editHora').value;
-      const tipo = document.getElementById('editTipo').value;
+            const projeto = {
+                nome,
+                statusAtual: status,
+                dataEntrega: data,
+                horaEntrega: hora,
+                tipoProjeto: tipo,
+                etapas: [{ nome: status, inicio: Date.now(), fim: null }] // Adicionado 'fim: null' para a etapa inicial
+            };
 
-      const atualizacao = {
-        nome,
-        dataEntrega: data,
-        horaEntrega: hora,
-        tipoProjeto: tipo
-      };
+            // Salva o projeto no Firebase
+            db.ref('projetos').push(projeto).then(() => {
+                alert('Projeto cadastrado com sucesso! ✅');
+                // Limpa o formulário após o cadastro
+                document.getElementById('nomeProjeto').value = '';
+                document.getElementById('statusInicial').value = 'Selecione a etapa inicial';
+                document.getElementById('dataEntrega').value = '';
+                document.getElementById('horaEntrega').value = '';
+                document.getElementById('tipoProjeto').value = 'Tipo';
+                // As funções desenharKanban e desenharHistorico são chamadas automaticamente pelo 'on("value")'
+            }).catch(error => {
+                console.error("Erro ao cadastrar projeto:", error);
+                alert("Ocorreu um erro ao cadastrar o projeto. Por favor, tente novamente.");
+            });
+        }
 
-      db.ref(`projetos/${id}`).update(atualizacao).then(() => {
-        document.getElementById('modalEdicao').style.display = 'none';
-        desenharKanban();
-      });
-    }
+        // Função para desenhar o quadro Kanban
+        function desenharKanban() {
+            const kanbanContainer = document.getElementById('kanbanContainer');
+            kanbanContainer.innerHTML = ''; // Limpa o container para evitar duplicação de colunas
 
-    window.onload = desenharKanban;
-  </script>
+            // Cria as colunas do Kanban
+            etapasKanban.forEach(etapa => {
+                const coluna = document.createElement('div');
+                coluna.id = `coluna-${etapa.toLowerCase().replace(/\s/g, '')}`; // ID único para a coluna
+                coluna.innerHTML = `<h3>${etapa}</h3>`;
+                kanbanContainer.appendChild(coluna);
+            });
+
+            // Escuta as mudanças nos projetos em tempo real no Firebase
+            db.ref('projetos').on('value', (snapshot) => {
+                const projetos = snapshot.val();
+
+                // Limpa todos os cartões existentes em todas as colunas antes de redesenhar
+                etapasKanban.forEach(etapa => {
+                    const colunaDiv = document.getElementById(`coluna-${etapa.toLowerCase().replace(/\s/g, '')}`);
+                    if (colunaDiv) {
+                        Array.from(colunaDiv.children).forEach(child => {
+                            if (child.classList.contains('card')) {
+                                colunaDiv.removeChild(child);
+                            }
+                        });
+                    }
+                });
+
+                if (projetos) {
+                    Object.keys(projetos).forEach(key => {
+                        const projeto = projetos[key];
+                        // Exibe todos os projetos no Kanban, incluindo "Finalizado"
+                        if (etapasKanban.includes(projeto.statusAtual)) {
+                            const card = document.createElement('div');
+                            card.classList.add('card');
+                            card.setAttribute('data-id', key); // Armazena o ID do Firebase no cartão
+
+                            let buttonsHtml = `
+                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.dataEntrega}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
+                            `;
+
+                            if (projeto.statusAtual !== 'Finalizado') {
+                                buttonsHtml += `
+                                    <button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>
+                                `;
+                            } else {
+                                buttonsHtml += `
+                                    <button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>
+                                `;
+                            }
+                            buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
+
+                            card.innerHTML = `
+                                <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
+                                Entrega: ${projeto.dataEntrega} às ${projeto.horaEntrega}<br>
+                                Status: ${projeto.statusAtual}
+                                <div class="card-actions">${buttonsHtml}</div>
+                            `;
+                            const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\s/g, '')}`);
+                            if (colunaDestino) {
+                                colunaDestino.appendChild(card);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // Função para avançar o projeto para a próxima etapa no Kanban
+        async function avancarEtapa(id, statusAtual) {
+            const currentIndex = etapasKanban.indexOf(statusAtual);
+
+            if (currentIndex === -1) {
+                alert("Status atual inválido.");
+                return;
+            }
+
+            // Busca os dados atuais do projeto para manipular as etapas
+            const projetoRef = db.ref('projetos/' + id);
+            await projetoRef.once('value').then(async snapshot => {
+                const projeto = snapshot.val();
+                if (!projeto) return;
+
+                let etapas = projeto.etapas || [];
+                // Encontra a última etapa registrada que ainda não tem 'fim' e a finaliza
+                const ultimaEtapaAtiva = etapas.find(e => e.nome === statusAtual && e.fim === null);
+                if (ultimaEtapaAtiva) {
+                    ultimaEtapaAtiva.fim = Date.now();
+                } else if (etapas.length > 0) { // Caso a etapa atual já tenha fim, pega a última
+                    etapas[etapas.length - 1].fim = Date.now();
+                }
+
+                const proximoStatus = etapasKanban[currentIndex + 1];
+
+                if (proximoStatus) {
+                    // Adiciona a nova etapa com início agora e fim null
+                    etapas.push({ nome: proximoStatus, inicio: Date.now(), fim: null });
+                    await projetoRef.update({
+                        statusAtual: proximoStatus,
+                        etapas: etapas
+                    });
+                    alert(`Projeto avançado para: ${proximoStatus} 👍`);
+                } else {
+                    alert("Este projeto já está na última etapa.");
+                }
+            }).catch(error => {
+                console.error("Erro ao avançar etapa:", error);
+                alert("Ocorreu um erro ao avançar a etapa do projeto.");
+            });
+        }
+
+
+        // Função para deletar um projeto
+        function deletarProjeto(id) {
+            if (confirm('Tem certeza que deseja excluir este projeto permanentemente? Essa ação não pode ser desfeita.')) {
+                db.ref('projetos/' + id).remove().then(() => {
+                    alert('Projeto excluído com sucesso! 🗑️');
+                }).catch(error => {
+                    console.error("Erro ao excluir projeto:", error);
+                    alert("Ocorreu um erro ao excluir o projeto.");
+                });
+            }
+        }
+
+        // Função para desenhar o histórico de projetos finalizados em formato de tabela (reescrita)
+        function desenharHistorico() {
+            const historicoContainer = document.getElementById('historicoContainer');
+            historicoContainer.innerHTML = ''; // Limpa o container antes de redesenhar
+
+            db.ref('projetos').on('value', (snapshot) => {
+                const projetos = snapshot.val();
+                let projetosFinalizados = [];
+
+                if (projetos) {
+                    Object.keys(projetos).forEach(key => {
+                        const projeto = projetos[key];
+                        if (projeto.statusAtual === 'Finalizado') {
+                            projetosFinalizados.push({ id: key, ...projeto });
+                        }
+                    });
+                }
+
+                if (projetosFinalizados.length === 0) {
+                    const noDataP = document.createElement('p');
+                    noDataP.classList.add('no-data');
+                    noDataP.textContent = 'Nenhum projeto finalizado ainda.';
+                    historicoContainer.appendChild(noDataP);
+                    return;
+                }
+
+                // Cria a tabela
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                const tbody = document.createElement('tbody');
+
+                // Cria o cabeçalho da tabela
+                const headerRow = document.createElement('tr');
+                ['Nome do Projeto', 'Tipo', 'Data de Entrega', 'Hora de Entrega', 'Etapas (Tempo Gasto)', 'Tempo Total', 'Ações'].forEach(text => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Preenche o corpo da tabela
+                projetosFinalizados.forEach(projeto => {
+                    const row = document.createElement('tr');
+
+                    // Nome do Projeto
+                    const tdNome = document.createElement('td');
+                    tdNome.textContent = projeto.nome;
+                    row.appendChild(tdNome);
+
+                    // Tipo
+                    const tdTipo = document.createElement('td');
+                    tdTipo.textContent = projeto.tipoProjeto;
+                    row.appendChild(tdTipo);
+
+                    // Data de Entrega
+                    const tdData = document.createElement('td');
+                    tdData.textContent = projeto.dataEntrega;
+                    row.appendChild(tdData);
+
+                    // Hora de Entrega
+                    const tdHora = document.createElement('td');
+                    tdHora.textContent = projeto.horaEntrega;
+                    row.appendChild(tdHora);
+
+                    // Etapas (Tempo Gasto)
+                    const tdEtapas = document.createElement('td');
+                    const ulEtapas = document.createElement('ul');
+                    let tempoTotalProjeto = 0;
+
+                    if (projeto.etapas) {
+                        projeto.etapas.forEach((etapa) => {
+                            const inicio = etapa.inicio;
+                            const fim = etapa.fim;
+
+                            let tempoGasto = null;
+                            if (inicio && fim) {
+                                tempoGasto = fim - inicio;
+                                tempoTotalProjeto += tempoGasto;
+                            }
+                            
+                            const li = document.createElement('li');
+                            li.textContent = `${etapa.nome}: ${formatarTempo(tempoGasto)}`;
+                            ulEtapas.appendChild(li);
+                        });
+                    }
+                    tdEtapas.appendChild(ulEtapas);
+                    row.appendChild(tdEtapas);
+
+                    // Tempo Total
+                    const tdTempoTotal = document.createElement('td');
+                    tdTempoTotal.textContent = formatarTempo(tempoTotalProjeto);
+                    row.appendChild(tdTempoTotal);
+
+                    // Ações
+                    const tdAcoes = document.createElement('td');
+                    tdAcoes.classList.add('historico-actions');
+                    
+                    const btnRestaurar = document.createElement('button');
+                    btnRestaurar.textContent = 'Restaurar';
+                    btnRestaurar.style.backgroundColor = '#007bff';
+                    btnRestaurar.onclick = () => restaurarProjeto(projeto.id, etapasKanban[0]);
+                    tdAcoes.appendChild(btnRestaurar);
+
+                    const btnExcluir = document.createElement('button');
+                    btnExcluir.textContent = 'Excluir';
+                    btnExcluir.style.backgroundColor = '#dc3545';
+                    btnExcluir.onclick = () => deletarProjeto(projeto.id);
+                    tdAcoes.appendChild(btnExcluir);
+
+                    row.appendChild(tdAcoes);
+                    tbody.appendChild(row);
+                });
+
+                table.appendChild(tbody);
+                historicoContainer.appendChild(table);
+            });
+        }
+
+        // Variável para armazenar o ID do projeto que está sendo editado no modal
+        let projetoIdEdicao = null;
+
+        // Função para abrir o modal de edição e preencher os campos
+        function abrirModalEdicao(id, nome, data, hora, tipo) {
+            projetoIdEdicao = id; // Armazena o ID do projeto atual
+            document.getElementById('editNome').value = nome;
+            document.getElementById('editData').value = data;
+            document.getElementById('editHora').value = hora;
+            document.getElementById('editTipo').value = tipo;
+            document.getElementById('modalEdicao').style.display = 'block'; // Exibe o modal
+        }
+
+        // Função para salvar as edições do projeto
+        function salvarEdicao() {
+            const id = projetoIdEdicao;
+            const novoNome = document.getElementById('editNome').value.trim();
+            const novaData = document.getElementById('editData').value;
+            const novaHora = document.getElementById('editHora').value;
+            const novoTipo = document.getElementById('editTipo').value;
+
+            if (!novoNome || !novaData || !novaHora || !novoTipo) {
+                alert('Por favor, preencha todos os campos para editar o projeto.');
+                return;
+            }
+
+            db.ref('projetos/' + id).update({
+                nome: novoNome,
+                dataEntrega: novaData,
+                horaEntrega: novaHora,
+                tipoProjeto: novoTipo
+            }).then(() => {
+                alert('Projeto atualizado com sucesso! ✨');
+                document.getElementById('modalEdicao').style.display = 'none'; // Esconde o modal
+            }).catch(error => {
+                console.error("Erro ao salvar edição:", error);
+                alert("Ocorreu um erro ao salvar as edições do projeto.");
+            });
+        }
+
+        // Função para restaurar um projeto do histórico para a primeira etapa do Kanban
+        async function restaurarProjeto(id, primeiraEtapa) {
+            if (confirm('Tem certeza que deseja restaurar este projeto para a primeira etapa do Kanban ("' + primeiraEtapa + '")?')) {
+                await db.ref('projetos/' + id).once('value').then(async snapshot => {
+                    const projeto = snapshot.val();
+                    let etapas = projeto.etapas || [];
+
+                    // Garante que a última etapa (Finalizado) tenha um 'fim' registrado se não tiver
+                    const ultimaEtapa = etapas[etapas.length - 1];
+                    if (ultimaEtapa && ultimaEtapa.nome === 'Finalizado' && ultimaEtapa.fim === null) {
+                        ultimaEtapa.fim = Date.now();
+                    }
+
+                    // Adiciona a nova etapa inicial como a etapa ativa
+                    etapas.push({ nome: primeiraEtapa, inicio: Date.now(), fim: null });
+
+                    return db.ref('projetos/' + id).update({
+                        statusAtual: primeiraEtapa, // Define o status para a primeira etapa
+                        etapas: etapas
+                    });
+                }).then(() => {
+                    alert('Projeto restaurado com sucesso! 🎉 Ele agora está de volta ao quadro Kanban.');
+                }).catch(error => {
+                    console.error("Erro ao restaurar projeto:", error);
+                    alert("Ocorreu um erro ao restaurar o projeto.");
+                });
+            }
+        }
+
+        // Chama as funções de desenho quando a página é completamente carregada
+        document.addEventListener('DOMContentLoaded', () => {
+            desenharKanban();
+            desenharHistorico();
+        });
+    </script>
 </body>
 </html>
