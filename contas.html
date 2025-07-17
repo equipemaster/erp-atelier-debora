@@ -96,7 +96,31 @@
         margin-top: 1rem;
     }
     .input-group input[type="number"] {
-        margin-bottom: 10px;
+      margin-bottom: 10px;
+    }
+    /* Estilo para o botão de pagamento */
+    .pagar-button {
+        background-color: #f39c12; /* Laranja para indicar pagamento */
+        color: white;
+        margin-left: 5px;
+    }
+    .pagar-button:hover {
+        background-color: #e67e22;
+    }
+    /* Estilo para a nova seção de saídas avulsas */
+    #registrarSaidaSection {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #c7a17a;
+        border-radius: 8px;
+        background-color: rgba(199, 161, 122, 0.1);
+    }
+    #historicoPagamentosSection {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #c7a17a;
+        border-radius: 8px;
+        background-color: rgba(199, 161, 122, 0.1);
     }
 
     @media (max-width: 600px) {
@@ -136,6 +160,17 @@
   </section>
 
   <canvas id="graficoContas"></canvas>
+  
+  ---
+  <section id="registrarSaidaSection">
+    <h2>Registrar Saída Avulsa</h2>
+    <input id="descricaoSaida" placeholder="Descrição da Saída"/>
+    <input type="number" id="valorSaida" placeholder="Valor da Saída" />
+    <button onclick="registrarSaidaAvulsa()"><i class="fas fa-minus-circle"></i> Registrar Saída</button>
+  </section>
+
+  ---
+
   <section>
     <h2>Lista de Contas</h2>
     <div>
@@ -163,6 +198,23 @@
     </table>
   </section>
 
+  ---
+
+  <section id="historicoPagamentosSection">
+    <h2>Histórico de Pagamentos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Valor</th>
+          <th>Data Pagamento</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaHistoricoPagamentos"></tbody>
+    </table>
+  </section>
+
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
   <script>
@@ -178,20 +230,34 @@
     const db = firebase.database();
 
     let contasTotais = [];
+    let saidasAvulsasTotais = []; // Nova variável para saídas avulsas
+    let historicoPagamentosTotais = []; // Nova variável para histórico de pagamentos
     let graficoContas = null;
     let currentInitialBalance = 0; // Variável para armazenar o saldo inicial manualmente inserido
 
+    // Listener de autenticação
     auth.onAuthStateChanged(user => {
+      // Remover a restrição de email aqui para que qualquer usuário autenticado possa usar
+      // Se você quiser reativar a restrição de email, descomente a linha abaixo e ajuste
+      /*
       if (!user || (user.email !== 'marneysamuellaraujo2@gmail.com' && user.email !== 'linhadeourobydebora@gmail.com')) {
         alert('Acesso restrito. Redirecionando...');
         window.location = 'home.html';
         return;
       }
+      */
+      if (!user) { // Se não houver usuário autenticado, redireciona
+        alert('Você precisa estar logado para acessar esta página. Redirecionando...');
+        window.location = 'home.html';
+        return;
+      }
+
       loadInitialBalance(); // Carrega o saldo inicial salvo
-      carregarContas();
+      carregarContas(); // Carrega contas e saídas avulsas
+      carregarHistoricoPagamentos(); // Carrega o histórico de pagamentos
     });
 
-    // Função para salvar o saldo inicial manualmente
+    // Função para salvar o saldo inicial manualmente e limpar o input
     function saveInitialBalance() {
         const inputBalance = parseFloat(document.getElementById('manualInitialBalance').value);
         if (!isNaN(inputBalance)) {
@@ -199,6 +265,7 @@
                 .then(() => {
                     currentInitialBalance = inputBalance;
                     document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ ${currentInitialBalance.toFixed(2)}`;
+                    document.getElementById('manualInitialBalance').value = ''; // Limpa o input
                     updateCalculatedExtratoBalance(); // Atualiza o saldo calculado
                     alert('Saldo inicial salvo com sucesso!');
                 })
@@ -212,33 +279,35 @@
     }
 
     // Função para carregar o saldo inicial salvo
-    function loadInitialBalance() {
-        db.ref('settings/initialBalance').once('value')
-            .then(snapshot => {
-                const savedBalance = snapshot.val();
-                if (typeof savedBalance === 'number') {
-                    currentInitialBalance = savedBalance;
-                    document.getElementById('manualInitialBalance').value = savedBalance.toFixed(2);
-                    document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ ${currentInitialBalance.toFixed(2)}`;
-                } else {
-                    currentInitialBalance = 0; // Padrão se não houver saldo salvo
-                    document.getElementById('manualInitialBalance').value = '';
-                    document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ 0,00`;
-                }
-                updateCalculatedExtratoBalance(); // Atualiza o saldo calculado ao carregar
-            })
-            .catch(error => {
-                console.error("Erro ao carregar saldo inicial:", error);
-                currentInitialBalance = 0;
-                document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: Erro`;
-                updateCalculatedExtratoBalance();
-            });
-    }
-
-    // Função para atualizar o saldo final calculado do "extrato" (a partir do saldo inicial + transações)
+    // Função para carregar o saldo inicial salvo
+function loadInitialBalance() {
+    db.ref('settings/initialBalance').once('value')
+        .then(snapshot => {
+            const savedBalance = snapshot.val();
+            if (typeof savedBalance === 'number') {
+                currentInitialBalance = savedBalance;
+                // REMOVA OU COMENTE A LINHA ABAIXO para que o input NÃO seja preenchido ao carregar
+                // document.getElementById('manualInitialBalance').value = savedBalance.toFixed(2); 
+                document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ ${currentInitialBalance.toFixed(2)}`;
+            } else {
+                currentInitialBalance = 0; 
+                document.getElementById('manualInitialBalance').value = '';
+                document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: R$ 0,00`;
+            }
+            updateCalculatedExtratoBalance(); 
+        })
+        .catch(error => {
+            console.error("Erro ao carregar saldo inicial:", error);
+            currentInitialBalance = 0;
+            document.getElementById('saldoInicialManual').textContent = `Saldo Inicial Informado: Erro`;
+            updateCalculatedExtratoBalance();
+        });
+}
+    // Função para atualizar o saldo final calculado (saldo inicial + recebimentos - pagamentos - saídas avulsas)
     function updateCalculatedExtratoBalance() {
         let totalPayments = 0;
         let totalReceives = 0;
+        let totalSaidasAvulsas = 0;
 
         contasTotais.forEach(c => {
             if (c.tipo === 'pagar') {
@@ -248,11 +317,16 @@
             }
         });
 
-        // O saldo final calculado é o saldo inicial manual + recebimentos - pagamentos
-        const calculatedFinalBalance = currentInitialBalance + totalReceives - totalPayments;
+        saidasAvulsasTotais.forEach(s => { // Inclui saídas avulsas no cálculo
+            totalSaidasAvulsas += parseFloat(s.valor) || 0;
+        });
+
+        // O saldo final calculado é o saldo inicial manual + recebimentos - pagamentos - saídas avulsas
+        const calculatedFinalBalance = currentInitialBalance + totalReceives - totalPayments - totalSaidasAvulsas;
         document.getElementById('saldoExtratoCalculado').textContent = `Saldo Final Calculado: R$ ${calculatedFinalBalance.toFixed(2)}`;
     }
 
+    // Função para registrar uma conta (a pagar/receber)
     function registrarConta() {
       const descricao = document.getElementById('descricaoConta').value;
       const valor = parseFloat(document.getElementById('valorConta').value);
@@ -266,12 +340,78 @@
           document.getElementById('descricaoConta').value = '';
           document.getElementById('valorConta').value = '';
           document.getElementById('tipoConta').value = 'pagar';
-          carregarContas();
+          carregarContas(); // Recarrega todas as contas e saídas
         })
         .catch(error => {
           console.error("Erro ao registrar conta:", error);
           alert("Erro ao registrar conta. Verifique o console para mais detalhes.");
         });
+    }
+
+    // NOVA FUNÇÃO: Registrar Saída Avulsa
+    function registrarSaidaAvulsa() {
+        const descricao = document.getElementById('descricaoSaida').value;
+        const valor = parseFloat(document.getElementById('valorSaida').value);
+        const data = new Date().toISOString().split('T')[0]; // Data atual
+        if (!descricao || isNaN(valor) || valor <= 0) return alert('Preencha a descrição e um valor válido para a saída!');
+
+        const id = db.ref('saidasAvulsas').push().key;
+        db.ref(`saidasAvulsas/${id}`).set({ id, descricao, valor, data })
+            .then(() => {
+                document.getElementById('descricaoSaida').value = '';
+                document.getElementById('valorSaida').value = '';
+                carregarContas(); // Recarrega para recalcular o saldo
+                alert('Saída avulsa registrada com sucesso!');
+            })
+            .catch(error => {
+                console.error("Erro ao registrar saída avulsa:", error);
+                alert("Erro ao registrar saída avulsa. Verifique o console.");
+            });
+    }
+
+    // NOVA FUNÇÃO: Informar Pagamento da Conta (move para histórico e remove de a pagar)
+    function informarPagamento(tipo, id) {
+        if (tipo !== 'pagar') {
+            alert('Esta função é apenas para contas "A Pagar".');
+            return;
+        }
+
+        if (confirm('Deseja realmente informar o pagamento desta conta? Ela será movida para o histórico.')) {
+            db.ref(`contas/${tipo}/${id}`).once('value')
+                .then(snapshot => {
+                    const contaPaga = snapshot.val();
+                    if (contaPaga) {
+                        const dataPagamento = new Date().toISOString().split('T')[0];
+                        
+                        // 1. Salvar no histórico de pagamentos
+                        const historicoId = db.ref('historicoPagamentos').push().key;
+                        db.ref(`historicoPagamentos/${historicoId}`).set({
+                            idOriginal: contaPaga.id,
+                            descricao: contaPaga.descricao,
+                            valor: contaPaga.valor,
+                            dataVencimentoOriginal: contaPaga.data,
+                            dataPagamento: dataPagamento
+                        })
+                        .then(() => {
+                            // 2. Remover da lista de contas a pagar
+                            return db.ref(`contas/${tipo}/${id}`).remove();
+                        })
+                        .then(() => {
+                            alert('Pagamento registrado e conta movida para o histórico!');
+                            carregarContas(); // Recarrega a lista de contas
+                            carregarHistoricoPagamentos(); // Recarrega o histórico
+                        })
+                        .catch(error => {
+                            console.error("Erro ao informar pagamento:", error);
+                            alert("Erro ao informar pagamento. Verifique o console.");
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar conta para pagamento:", error);
+                    alert("Erro ao buscar conta. Verifique o console.");
+                });
+        }
     }
 
     function carregarGraficoContas() {
@@ -281,6 +421,8 @@
 
       let pagar = 0;
       let receber = 0;
+      let saidasAvulsas = 0; // Nova variável para o gráfico
+
       contasTotais.forEach(c => {
         if (c.tipo === 'pagar') {
           pagar += parseFloat(c.valor) || 0;
@@ -288,30 +430,37 @@
           receber += parseFloat(c.valor) || 0;
         }
       });
+
+      saidasAvulsasTotais.forEach(s => { // Inclui saídas avulsas no gráfico
+          saidasAvulsas += parseFloat(s.valor) || 0;
+      });
       
       const ctx = document.getElementById('graficoContas').getContext('2d');
       graficoContas = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['A Pagar', 'A Receber'],
+          labels: ['A Pagar', 'A Receber', 'Saídas Avulsas'], // Rótulos atualizados
           datasets: [{
             label: 'Contas em R$',
-            data: [pagar, receber],
-            backgroundColor: ['#e74c3c', '#27ae60']
+            data: [pagar, receber, saidasAvulsas], // Dados atualizados
+            backgroundColor: ['#e74c3c', '#27ae60', '#9b59b6'] // Cores: Pagar (vermelho), Receber (verde), Saídas (roxo)
           }]
         },
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
       });
     }
 
+    // Carrega todas as contas (a pagar, a receber) e saídas avulsas
     function carregarContas() {
       contasTotais = [];
-      const promises = [];
+      saidasAvulsasTotais = []; // Limpa antes de carregar
 
+      const promises = [];
       promises.push(db.ref(`contas/pagar`).once('value'));
       promises.push(db.ref(`contas/receber`).once('value'));
+      promises.push(db.ref(`saidasAvulsas`).once('value')); // Adiciona a promessa para saídas avulsas
 
-      Promise.all(promises).then(([snapPagar, snapReceber]) => {
+      Promise.all(promises).then(([snapPagar, snapReceber, snapSaidas]) => {
         snapPagar.forEach(c => {
           const conta = c.val();
           conta.id = c.key;
@@ -322,9 +471,16 @@
           conta.id = c.key;
           contasTotais.push(conta);
         });
+        snapSaidas.forEach(s => { // Popula saídas avulsas
+          const saida = s.val();
+          saida.id = s.key;
+          saidasAvulsasTotais.push(saida);
+        });
         
         let totalPagar = 0;
         let totalReceber = 0;
+        let totalSaidas = 0;
+
         contasTotais.forEach(conta => {
           if (conta.tipo === 'pagar') {
             totalPagar += parseFloat(conta.valor) || 0;
@@ -332,16 +488,67 @@
             totalReceber += parseFloat(conta.valor) || 0;
           }
         });
-        const saldoGeral = totalReceber - totalPagar;
+        saidasAvulsasTotais.forEach(saida => { // Soma as saídas avulsas
+            totalSaidas += parseFloat(saida.valor) || 0;
+        });
+
+        // O saldo geral agora considera também as saídas avulsas
+        const saldoGeral = totalReceber - totalPagar - totalSaidas;
         document.getElementById('saldoTotal').textContent = `Saldo Total: R$ ${saldoGeral.toFixed(2)}`;
 
-        filtrarContas();
-        carregarGraficoContas();
-        updateCalculatedExtratoBalance(); // Chamar aqui também para garantir que o saldo calculado seja atualizado após carregar as contas
+        filtrarContas(); // Mantém a lista filtrada
+        carregarGraficoContas(); // Atualiza o gráfico
+        updateCalculatedExtratoBalance(); // Atualiza o saldo calculado com base no inicial e transações
       }).catch(error => {
-        console.error("Erro ao carregar contas:", error);
+        console.error("Erro ao carregar contas e saídas:", error);
       });
     }
+
+    // NOVA FUNÇÃO: Carregar Histórico de Pagamentos
+    function carregarHistoricoPagamentos() {
+        historicoPagamentosTotais = []; // Limpa antes de carregar
+        const tabelaHistorico = document.getElementById('tabelaHistoricoPagamentos');
+        tabelaHistorico.innerHTML = ''; // Limpa a tabela
+
+        db.ref('historicoPagamentos').once('value')
+            .then(snapshot => {
+                snapshot.forEach(item => {
+                    const pagamento = item.val();
+                    pagamento.id = item.key; // O ID do item no histórico
+                    historicoPagamentosTotais.push(pagamento);
+
+                    tabelaHistorico.innerHTML += `
+                        <tr>
+                            <td>${pagamento.descricao}</td>
+                            <td>R$ ${parseFloat(pagamento.valor).toFixed(2)}</td>
+                            <td>${pagamento.dataPagamento || ''}</td>
+                            <td>
+                                <button onclick="excluirPagamentoHistorico('${pagamento.id}')" title="Excluir do Histórico"><i class='fas fa-trash'></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(error => {
+                console.error("Erro ao carregar histórico de pagamentos:", error);
+            });
+    }
+
+    // NOVA FUNÇÃO: Excluir item do Histórico de Pagamentos
+    function excluirPagamentoHistorico(id) {
+        if (confirm('Deseja excluir este item do histórico de pagamentos? Esta ação é irreversível.')) {
+            db.ref(`historicoPagamentos/${id}`).remove()
+                .then(() => {
+                    alert('Item removido do histórico com sucesso!');
+                    carregarHistoricoPagamentos(); // Recarrega o histórico
+                })
+                .catch(error => {
+                    console.error("Erro ao excluir do histórico:", error);
+                    alert("Erro ao excluir do histórico. Verifique o console.");
+                });
+        }
+    }
+
 
     function filtrarContas() {
       const tipo = document.getElementById('filtroTipo').value;
@@ -351,31 +558,55 @@
       const tabela = document.getElementById('tabelaContas');
       tabela.innerHTML = '';
 
-      contasTotais.filter(c => {
-        const passaTipo = !tipo || c.tipo === tipo;
-        const passaValor = c.valor >= valor;
+      // Combina contasTotais e saidasAvulsasTotais para exibição na mesma tabela ou em tabelas separadas se desejar.
+      // Por enquanto, vamos exibir apenas as "contas" principais aqui. Saídas terão sua própria seção.
+      const todasTransacoesParaExibir = [...contasTotais, ...saidasAvulsasTotais.map(s => ({...s, tipo: 'saidaAvulsa'}))]; // Mapeia saídas para ter um 'tipo' para filtro
+
+      todasTransacoesParaExibir.filter(c => {
+        const passaTipo = !tipo || c.tipo === tipo || (tipo === 'saidaAvulsa' && c.tipo === 'saidaAvulsa');
+        const passaValor = (c.valor || 0) >= valor;
         const passaData = (!inicio || c.data >= inicio) && (!fim || c.data <= fim);
         return passaTipo && passaValor && passaData;
       }).forEach(conta => {
+        let acoesHtml = `
+            <button onclick="editarConta('${conta.tipo}', '${conta.id}')" title="Editar"><i class='fas fa-edit'></i></button>
+            <button onclick="excluirConta('${conta.tipo}', '${conta.id}')" title="Excluir"><i class='fas fa-trash'></i></button>
+        `;
+        // Adiciona botão "Informar Pagamento" apenas para contas "A Pagar"
+        if (conta.tipo === 'pagar') {
+            acoesHtml += `<button class="pagar-button" onclick="informarPagamento('${conta.tipo}', '${conta.id}')" title="Informar Pagamento"><i class='fas fa-money-bill-wave'></i> Pagar</button>`;
+        }
+        // Para Saídas Avulsas, o tipo de ação pode ser diferente, se necessário
+        // (Não adicionei botão "Pagar" para saída avulsa, pois ela já é um registro de pagamento)
+        
+        // Ajusta o texto do tipo para Saída Avulsa na tabela
+        const tipoExibicao = conta.tipo === 'saidaAvulsa' ? 'Saída Avulsa' : (conta.tipo === 'pagar' ? 'A Pagar' : 'A Receber');
+
         tabela.innerHTML += `
           <tr>
             <td>${conta.descricao}</td>
-            <td>R$ ${parseFloat(conta.valor).toFixed(2)}</td>
-            <td>${conta.tipo}</td>
+            <td>R$ ${parseFloat(conta.valor || 0).toFixed(2)}</td>
+            <td>${tipoExibicao}</td>
             <td>${conta.data || ''}</td>
-            <td>
-              <button onclick="editarConta('${conta.tipo}', '${conta.id}')"><i class='fas fa-edit'></i></button>
-              <button onclick="excluirConta('${conta.tipo}', '${conta.id}')"><i class='fas fa-trash'></i></button>
-            </td>
+            <td>${acoesHtml}</td>
           </tr>`;
       });
     }
 
     function exportarCSV() {
-      let csv = 'Descrição,Valor,Tipo,Data\n';
+      let csv = 'Tipo,Descricao,Valor,Data\n'; // Reordenei para ter Tipo primeiro
+      // Inclui tanto contas quanto saídas avulsas no CSV
       contasTotais.forEach(c => {
-        csv += `${c.descricao},${c.valor},${c.tipo},${c.data || ''}\n`;
+        csv += `${c.tipo},"${c.descricao}",${c.valor},${c.data || ''}\n`;
       });
+      saidasAvulsasTotais.forEach(s => {
+        csv += `saidaAvulsa,"${s.descricao}",${s.valor},${s.data || ''}\n`;
+      });
+      historicoPagamentosTotais.forEach(hp => {
+        // Para o histórico, podemos especificar um tipo de "Pagamento Registrado"
+        csv += `pagamentoRegistrado,"${hp.descricao}",${hp.valor},${hp.dataPagamento || ''}\n`;
+      });
+
 
       const BOM = "\uFEFF";
       const finalCsv = BOM + csv;
@@ -384,12 +615,17 @@
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'contas.csv';
+      a.download = 'relatorio_financeiro.csv'; // Nome do arquivo mais abrangente
       a.click();
       window.URL.revokeObjectURL(url);
     }
 
     function editarConta(tipo, id) {
+      // Se for uma saída avulsa, redireciona para a função correta de edição
+      if (tipo === 'saidaAvulsa') {
+          editarSaidaAvulsa(id);
+          return;
+      }
       db.ref(`contas/${tipo}/${id}`).once('value').then(snapshot => {
         const conta = snapshot.val();
         const novaDescricao = prompt('Nova descrição:', conta.descricao);
@@ -409,7 +645,34 @@
       });
     }
 
+    // NOVA FUNÇÃO: Editar Saída Avulsa
+    function editarSaidaAvulsa(id) {
+        db.ref(`saidasAvulsas/${id}`).once('value').then(snapshot => {
+            const saida = snapshot.val();
+            const novaDescricao = prompt('Nova descrição da saída:', saida.descricao);
+            const novoValor = prompt('Novo valor da saída:', saida.valor);
+            if (novaDescricao && !isNaN(parseFloat(novoValor))) {
+                db.ref(`saidasAvulsas/${id}`).update({ descricao: novaDescricao, valor: parseFloat(novoValor) })
+                    .then(() => {
+                        carregarContas(); // Recarrega para atualizar o saldo
+                    })
+                    .catch(error => {
+                        console.error("Erro ao editar saída avulsa:", error);
+                        alert("Erro ao editar saída avulsa. Verifique o console.");
+                    });
+            } else if (novaDescricao !== null || novoValor !== null) {
+                alert("Valores inválidos. A edição da saída foi cancelada.");
+            }
+        });
+    }
+
     function excluirConta(tipo, id) {
+      // Se for uma saída avulsa, redireciona para a função correta de exclusão
+      if (tipo === 'saidaAvulsa') {
+          excluirSaidaAvulsa(id);
+          return;
+      }
+
       if (confirm('Deseja excluir esta conta?')) {
         db.ref(`contas/${tipo}/${id}`).remove()
           .then(() => {
@@ -420,6 +683,20 @@
             alert("Erro ao excluir conta. Verifique o console para mais detalhes.");
           });
       }
+    }
+
+    // NOVA FUNÇÃO: Excluir Saída Avulsa
+    function excluirSaidaAvulsa(id) {
+        if (confirm('Deseja excluir esta saída avulsa?')) {
+            db.ref(`saidasAvulsas/${id}`).remove()
+                .then(() => {
+                    carregarContas(); // Recarrega para atualizar o saldo
+                })
+                .catch(error => {
+                    console.error("Erro ao excluir saída avulsa:", error);
+                    alert("Erro ao excluir saída avulsa. Verifique o console.");
+                });
+        }
     }
 
   </script>
