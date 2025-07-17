@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <link rel="icon" href="favicon-16x16.png" type="favicon-16x16.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Projetos</title>
@@ -119,7 +118,8 @@
         /* Cores específicas para botões de ação */
         .card .card-actions button[onclick*="avancarEtapa"] { background-color: #28a745; } /* Verde */
         .card .card-actions button[onclick*="deletarProjeto"] { background-color: #dc3545; } /* Vermelho */
-        .card .card-actions button[onclick*="finalizarProjeto"] { background-color: #ffc107; color: #333;} /* Amarelo para Finalizar */
+        .card .card-actions button[onclick*="restaurarProjeto"] { background-color: #007bff; } /* Azul */
+        .card .card-actions button[onclick*="marcarComoFinalizado"] { background-color: #ffc107; color: #333;} /* Amarelo para Finalizar */
 
         .btn-voltar {
             margin: 2rem auto;
@@ -233,12 +233,13 @@
         #historicoContainer .no-data {
             text-align: center;
             padding: 30px;
-            color: #555; /* Cor mais visível para a mensagem */
+            color: #ccc;
             font-style: italic;
             background-color: #f9f3e7;
             border-radius: 8px;
             margin: 20px auto;
             max-width: 95%;
+            color: #555;
         }
         #historicoContainer ul {
             list-style: none; /* Remove bullet points */
@@ -278,9 +279,10 @@
 
     <div id="kanbanContainer"></div>
 
-    <hr> <h2>Histórico de Projetos Finalizados</h2>
-    <div id="historicoContainer"></div> 
-    <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
+    ---
+
+    <h2>Histórico de Projetos Finalizados</h2>
+    <div id="historicoContainer"></div> <a href="home.html" class="btn-voltar">Voltar ao Menu</a>
 
     <div id="modalEdicao">
         <div class="modal-content">
@@ -316,19 +318,20 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Etapas do Kanban em ordem lógica (SEM "Finalizado" aqui)
+        // Etapas do Kanban em ordem lógica, incluindo "Finalizado"
         const etapasKanban = [
             "Croqui",
             "Modelagem",
             "Corte",
             "Costura",
             "Prova",
-            "Ajuste"
+            "Ajuste",
+            "Finalizado"
         ];
 
         // Função para formatar milissegundos em HH:MM:SS
         function formatarTempo(ms) {
-            if (ms === null || isNaN(ms) || ms < 0) return "00h 00m 00s";
+            if (ms === null || isNaN(ms) || ms < 0) return "00h 00m 00s"; // Garante que não exiba N/A ou valores negativos
             const totalSeconds = Math.floor(ms / 1000);
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -358,10 +361,10 @@
                 dataEntrega: data,
                 horaEntrega: hora,
                 tipoProjeto: tipo,
-                // A etapa inicial começa com 'inicio' e 'fim' nulo
-                etapas: [{ nome: status, inicio: Date.now(), fim: null }] 
+                etapas: [{ nome: status, inicio: Date.now(), fim: null }] // Adicionado 'fim: null' para a etapa inicial
             };
 
+            // Salva o projeto no Firebase
             db.ref('projetos').push(projeto).then(() => {
                 alert('Projeto cadastrado com sucesso! ✅');
                 // Limpa o formulário após o cadastro
@@ -370,6 +373,7 @@
                 document.getElementById('dataEntrega').value = '';
                 document.getElementById('horaEntrega').value = '';
                 document.getElementById('tipoProjeto').value = 'Tipo';
+                // As funções desenharKanban e desenharHistorico são chamadas automaticamente pelo 'on("value")'
             }).catch(error => {
                 console.error("Erro ao cadastrar projeto:", error);
                 alert("Ocorreu um erro ao cadastrar o projeto. Por favor, tente novamente.");
@@ -381,7 +385,7 @@
             const kanbanContainer = document.getElementById('kanbanContainer');
             kanbanContainer.innerHTML = ''; // Limpa o container para evitar duplicação de colunas
 
-            // Cria as colunas do Kanban (sem "Finalizado")
+            // Cria as colunas do Kanban
             etapasKanban.forEach(etapa => {
                 const coluna = document.createElement('div');
                 coluna.id = `coluna-${etapa.toLowerCase().replace(/\s/g, '')}`; // ID único para a coluna
@@ -397,7 +401,6 @@
                 etapasKanban.forEach(etapa => {
                     const colunaDiv = document.getElementById(`coluna-${etapa.toLowerCase().replace(/\s/g, '')}`);
                     if (colunaDiv) {
-                        // Remove apenas os cards, mantendo o h3 do título da coluna
                         Array.from(colunaDiv.children).forEach(child => {
                             if (child.classList.contains('card')) {
                                 colunaDiv.removeChild(child);
@@ -409,7 +412,7 @@
                 if (projetos) {
                     Object.keys(projetos).forEach(key => {
                         const projeto = projetos[key];
-                        // Renderiza no Kanban APENAS se o status NÃO for 'Finalizado'
+                        // Exibe todos os projetos no Kanban, incluindo "Finalizado"
                         if (etapasKanban.includes(projeto.statusAtual)) {
                             const card = document.createElement('div');
                             card.classList.add('card');
@@ -419,18 +422,15 @@
                                 <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.dataEntrega}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
                             `;
 
-                            // Se for a última etapa do Kanban visível ('Ajuste'), o botão será "Finalizar"
-                            if (projeto.statusAtual === etapasKanban[etapasKanban.length - 1]) {
-                                buttonsHtml += `
-                                    <button onclick="finalizarProjeto('${key}')" style="background-color: #ffc107; color: #333;">Finalizar</button>
-                                `;
-                            } else {
-                                // Para as outras etapas, o botão será "Próximo"
+                            if (projeto.statusAtual !== 'Finalizado') {
                                 buttonsHtml += `
                                     <button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>
                                 `;
+                            } else {
+                                buttonsHtml += `
+                                    <button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>
+                                `;
                             }
-                            
                             buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
 
                             card.innerHTML = `
@@ -454,78 +454,44 @@
             const currentIndex = etapasKanban.indexOf(statusAtual);
 
             if (currentIndex === -1) {
-                alert("Status atual inválido ou projeto já finalizado.");
+                alert("Status atual inválido.");
                 return;
             }
 
-            const proximoStatus = etapasKanban[currentIndex + 1];
+            // Busca os dados atuais do projeto para manipular as etapas
+            const projetoRef = db.ref('projetos/' + id);
+            await projetoRef.once('value').then(async snapshot => {
+                const projeto = snapshot.val();
+                if (!projeto) return;
 
-            if (proximoStatus) {
-                const projetoRef = db.ref('projetos/' + id);
-                await projetoRef.once('value').then(async snapshot => {
-                    const projeto = snapshot.val();
-                    if (!projeto) return;
+                let etapas = projeto.etapas || [];
+                // Encontra a última etapa registrada que ainda não tem 'fim' e a finaliza
+                const ultimaEtapaAtiva = etapas.find(e => e.nome === statusAtual && e.fim === null);
+                if (ultimaEtapaAtiva) {
+                    ultimaEtapaAtiva.fim = Date.now();
+                } else if (etapas.length > 0) { // Caso a etapa atual já tenha fim, pega a última
+                    etapas[etapas.length - 1].fim = Date.now();
+                }
 
-                    let etapas = projeto.etapas || [];
-                    // Finaliza a etapa atual
-                    const ultimaEtapaAtiva = etapas.find(e => e.nome === statusAtual && e.fim === null);
-                    if (ultimaEtapaAtiva) {
-                        ultimaEtapaAtiva.fim = Date.now();
-                    } else if (etapas.length > 0) { // Fallback, caso a última etapa não tenha fim
-                        etapas[etapas.length - 1].fim = Date.now();
-                    }
+                const proximoStatus = etapasKanban[currentIndex + 1];
 
+                if (proximoStatus) {
                     // Adiciona a nova etapa com início agora e fim null
                     etapas.push({ nome: proximoStatus, inicio: Date.now(), fim: null });
-
                     await projetoRef.update({
                         statusAtual: proximoStatus,
                         etapas: etapas
                     });
                     alert(`Projeto avançado para: ${proximoStatus} 👍`);
-                }).catch(error => {
-                    console.error("Erro ao avançar etapa:", error);
-                    alert("Ocorreu um erro ao avançar a etapa do projeto.");
-                });
-            } else {
-                // Se não houver próximo status no etapasKanban, significa que é a última etapa antes de finalizar.
-                // Isso não deve ocorrer com o novo botão "Finalizar" na última etapa.
-                // Mas, como fallback ou para debug, pode-se manter um alert.
-                alert("Este projeto já está na última etapa do Kanban. Use o botão 'Finalizar' para enviá-lo ao histórico.");
-            }
+                } else {
+                    alert("Este projeto já está na última etapa.");
+                }
+            }).catch(error => {
+                console.error("Erro ao avançar etapa:", error);
+                alert("Ocorreu um erro ao avançar a etapa do projeto.");
+            });
         }
 
-        // NOVA FUNÇÃO: Finalizar Projeto
-        async function finalizarProjeto(id) {
-            if (confirm('Tem certeza que deseja finalizar este projeto e enviá-lo para o histórico?')) {
-                const projetoRef = db.ref('projetos/' + id);
-                await projetoRef.once('value').then(async snapshot => {
-                    const projeto = snapshot.val();
-                    if (!projeto) return;
-
-                    let etapas = projeto.etapas || [];
-                    // Encontra a última etapa ativa (no Kanban, seria 'Ajuste') e a finaliza
-                    const ultimaEtapaAtiva = etapas.find(e => e.fim === null); // Busca a que não tem 'fim'
-                    if (ultimaEtapaAtiva) {
-                        ultimaEtapaAtiva.fim = Date.now();
-                    } else if (etapas.length > 0) { // Fallback se todas já tiverem fim (menos provável)
-                        etapas[etapas.length - 1].fim = Date.now();
-                    }
-
-                    // Adiciona a etapa "Finalizado"
-                    etapas.push({ nome: "Finalizado", inicio: Date.now(), fim: Date.now() }); // Finalizado tem início e fim iguais
-
-                    await projetoRef.update({
-                        statusAtual: "Finalizado",
-                        etapas: etapas
-                    });
-                    alert('Projeto finalizado e enviado para o histórico! ✅');
-                }).catch(error => {
-                    console.error("Erro ao finalizar projeto:", error);
-                    alert("Ocorreu um erro ao finalizar o projeto.");
-                });
-            }
-        }
 
         // Função para deletar um projeto
         function deletarProjeto(id) {
@@ -539,13 +505,12 @@
             }
         }
 
-        // Função para desenhar o histórico de projetos finalizados em formato de tabela
+        // Função para desenhar o histórico de projetos finalizados em formato de tabela (reescrita)
         function desenharHistorico() {
             const historicoContainer = document.getElementById('historicoContainer');
+            historicoContainer.innerHTML = ''; // Limpa o container antes de redesenhar
 
             db.ref('projetos').on('value', (snapshot) => {
-                historicoContainer.innerHTML = ''; // Sempre limpa o container antes de redesenhar
-
                 const projetos = snapshot.val();
                 let projetosFinalizados = [];
 
@@ -704,24 +669,19 @@
             if (confirm('Tem certeza que deseja restaurar este projeto para a primeira etapa do Kanban ("' + primeiraEtapa + '")?')) {
                 await db.ref('projetos/' + id).once('value').then(async snapshot => {
                     const projeto = snapshot.val();
-                    if (!projeto) return;
-
                     let etapas = projeto.etapas || [];
 
-                    // Garante que a última etapa ('Finalizado') tenha um 'fim' registrado
-                    const ultimaEtapaFinalizada = etapas.find(e => e.nome === 'Finalizado' && e.fim === null);
-                    if (ultimaEtapaFinalizada) {
-                        ultimaEtapaFinalizada.fim = Date.now();
-                    } else if (etapas.length > 0) { // Fallback, se a última existente não tiver fim
-                         etapas[etapas.length - 1].fim = Date.now();
+                    // Garante que a última etapa (Finalizado) tenha um 'fim' registrado se não tiver
+                    const ultimaEtapa = etapas[etapas.length - 1];
+                    if (ultimaEtapa && ultimaEtapa.nome === 'Finalizado' && ultimaEtapa.fim === null) {
+                        ultimaEtapa.fim = Date.now();
                     }
 
-
-                    // Adiciona a nova etapa inicial como a etapa ativa para o Kanban
+                    // Adiciona a nova etapa inicial como a etapa ativa
                     etapas.push({ nome: primeiraEtapa, inicio: Date.now(), fim: null });
 
                     return db.ref('projetos/' + id).update({
-                        statusAtual: primeiraEtapa, // Define o status para a primeira etapa do Kanban
+                        statusAtual: primeiraEtapa, // Define o status para a primeira etapa
                         etapas: etapas
                     });
                 }).then(() => {
