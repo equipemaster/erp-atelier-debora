@@ -157,38 +157,73 @@
       setInterval(atualizarAlerta, 60000);
     });
 
-    function atualizarKanban() {
-      const colunas = ['Modelagem', 'Corte', 'Costura', 'Prova', 'Ajuste','Lavandeiria', 'Finalizado'];
-      const caixa = document.getElementById('kanbanContainer');
-      caixa.innerHTML = '';
+    function desenharKanban() {
+            const kanbanContainer = document.getElementById('kanbanContainer');
+            kanbanContainer.innerHTML = ''; // Limpa o container para evitar duplicação de colunas
 
-      
+            // Cria as colunas do Kanban
+            etapasKanban.forEach(etapa => {
+                const coluna = document.createElement('div');
+                coluna.id = `coluna-${etapa.toLowerCase().replace(/\s/g, '')}`; // ID único para a coluna
+                coluna.innerHTML = `<h3>${etapa}</h3>`;
+                kanbanContainer.appendChild(coluna);
+            });
 
-      colunas.forEach(nome => {
-        const coluna = document.createElement('div');
-        coluna.id = `coluna-${nome}`;
-        coluna.innerHTML = `<h4>${nome}</h4>`;
-        caixa.appendChild(coluna);
-      });
+            // Escuta as mudanças nos projetos em tempo real no Firebase
+            db.ref('projetos').on('value', (snapshot) => {
+                const projetos = snapshot.val();
 
-      db.ref('projetos').once('value').then(snapshot => {
-        snapshot.forEach(p => {
-          const projeto = p.val();
-          const etapas = projeto.etapas || [];
-          const etapaAtual = etapas.find(e => !e.concluido);
-          const etapaNome =  etapaAtual.nome ;
+                // Limpa todos os cartões existentes em todas as colunas antes de redesenhar
+                etapasKanban.forEach(etapa => {
+                    const colunaDiv = document.getElementById(`coluna-${etapa.toLowerCase().replace(/\s/g, '')}`);
+                    if (colunaDiv) {
+                        Array.from(colunaDiv.children).forEach(child => {
+                            if (child.classList.contains('card')) {
+                                colunaDiv.removeChild(child);
+                            }
+                        });
+                    }
+                });
 
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `<strong>${projeto.nome}</strong><br>
-                            <small>Entrega: ${projeto.dataEntrega || '--'}<br>
-                            Tipo: ${projeto.tipoProjeto || '-'}</small>`;
+                if (projetos) {
+                    Object.keys(projetos).forEach(key => {
+                        const projeto = projetos[key];
+                        // Exibe todos os projetos no Kanban, incluindo "Finalizado"
+                        if (etapasKanban.includes(projeto.statusAtual)) {
+                            const card = document.createElement('div');
+                            card.classList.add('card');
+                            card.setAttribute('data-id', key); // Armazena o ID do Firebase no cartão
 
-          const destino = document.getElementById(`coluna-${etapaNome}`);
-          if (destino) destino.appendChild(card);
-        });
-      });
-    }
+                            let buttonsHtml = `
+                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.dataEntrega}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
+                            `;
+
+                            if (projeto.statusAtual !== 'Finalizado') {
+                                buttonsHtml += `
+                                    <button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>
+                                `;
+                            } else {
+                                buttonsHtml += `
+                                    <button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>
+                                `;
+                            }
+                            buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
+
+                            card.innerHTML = `
+                                <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
+                                Entrega: ${projeto.dataEntrega} às ${projeto.horaEntrega}<br>
+                                Status: ${projeto.statusAtual}
+                                <div class="card-actions">${buttonsHtml}</div>
+                            `;
+                            const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\s/g, '')}`);
+                            if (colunaDestino) {
+                                colunaDestino.appendChild(card);
+                            }
+                        }
+                    });
+                }
+            });
+        }
 
     function atualizarAlerta() {
       db.ref('projetos').once('value').then(snapshot => {
