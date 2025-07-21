@@ -158,9 +158,11 @@
     });
 
     function atualizarKanban() {
-      const colunas = ['Modelagem', 'Corte', 'Costura', 'Prova', 'Ajuste','Lavandeiria', 'Finalizado'];
+      const colunas = ['',Modelagem', 'Corte', 'Costura', 'Prova', 'Ajuste','Lavandeiria', 'Finalizado'];
       const caixa = document.getElementById('kanbanContainer');
       caixa.innerHTML = '';
+
+      
 
       colunas.forEach(nome => {
         const coluna = document.createElement('div');
