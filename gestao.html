@@ -204,26 +204,13 @@
                             card.classList.add('card');
                             card.setAttribute('data-id', key); // Armazena o ID do Firebase no cartão
 
-                            let buttonsHtml = `
-                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.dataEntrega}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
-                            `;
-
-                            if (projeto.statusAtual !== 'Finalizado') {
-                                buttonsHtml += `
-                                    <button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>
-                                `;
-                            } else {
-                                buttonsHtml += `
-                                    <button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>
-                                `;
-                            }
-                            buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
+                            
 
                             card.innerHTML = `
                                 <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
                                 Entrega: ${projeto.dataEntrega} às ${projeto.horaEntrega}<br>
                                 Status: ${projeto.statusAtual}
-                                <div class="card-actions">${buttonsHtml}</div>
+                                
                             `;
                             const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\s/g, '')}`);
                             if (colunaDestino) {
