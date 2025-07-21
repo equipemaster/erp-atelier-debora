@@ -48,11 +48,17 @@
       margin: 20px auto;
     }
     #kanbanContainer > div {
-      flex: 1;
-      background: #f9f3e7;
-      padding: 10px;
-      border-radius: 6px;
-    }
+        flex: 0 0 160px; /* Largura fixa para as colunas */
+        background: #f9f3e7;
+        padding: 10px;
+        border-radius: 6px;
+        overflow-y: auto; /* Rolagem vertical para os cards dentro da coluna */
+        height: 400px; /* Altura fixa para as colunas */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        color: #000;
+        display: flex; /* Para flex-direction column */
+        flex-direction: column;
+        }
     #kanbanContainer h4 {
       color: #333;
     }
