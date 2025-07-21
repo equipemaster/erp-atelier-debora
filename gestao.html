@@ -176,7 +176,7 @@
           const projeto = p.val();
           const etapas = projeto.etapas || [];
           const etapaAtual = etapas.find(e => !e.concluido);
-          const etapaNome = etapaAtual ? etapaAtual.nome : 'Finalizado';
+          const etapaNome =  etapaAtual.nome ;
 
           const card = document.createElement('div');
           card.className = 'card';
