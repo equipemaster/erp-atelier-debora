@@ -114,49 +114,13 @@
             "Finalizado"
         ];
 
-    let chart;
-    let filtroAtual = 'andamento';
-
-    function desenharGrafico() {
-      db.ref('projetos').once('value').then(snapshot => {
-        let andamento = 0, finalizado = 0;
-        snapshot.forEach(p => {
-          const etapas = p.val().etapas || [];
-          const etapaAtual = etapas.find(e => !e.concluido);
-          if (!etapaAtual) finalizado++;
-          else andamento++;
-        });
-
-        const data = [andamento, finalizado];
-        const ctx = document.getElementById('graficoGestao').getContext('2d');
-        if (chart) chart.destroy();
-        chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Em Andamento', 'Finalizados'],
-            datasets: [{ label: 'Projetos', data: data, backgroundColor: ['#f39c12', '#2980b9'] }]
-          },
-          options: {
-            animation: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-          }
-        });
-      });
-    }
-
+    
     auth.onAuthStateChanged(user => {
       if (!user) {
         alert('Você precisa estar logado.');
         window.location.href = 'index.html';
         return;
       }
-
-      desenharGrafico();
-      setInterval(() => {
-        filtroAtual = filtroAtual === 'andamento' ? 'finalizado' : 'andamento';
-        desenharGrafico();
-      }, 5000);
 
       db.ref('projetos').on('value', () => {
         atualizarKanban();
