@@ -191,22 +191,26 @@
     function atualizarAlerta() {
       db.ref('projetos').once('value').then(snapshot => {
         let html = '';
-        snapshot.forEach(p => {
-          for (let i = 0; i < 4; i++) {
-          const nome = p.val().nome;
-          const dataEntrega = p.val().dataEntrega;
-          const etapas = p.val().etapas || [];
-          const finalizado = etapas.every(e => e.concluido);
-          if (!dataEntrega) return;
-          const hoje = new Date();
-          const dtEntrega = new Date(dataEntrega);
-          const dias = Math.ceil((dtEntrega - hoje) / (1000*60*60*24));
-          html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 && !finalizado ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
-            Projeto <strong>${nome}</strong> - Entrega em <strong>${dias}</strong> dia(s)
-          </div>`;
-           }
-          
-        });
+        let count = 0;
+snapshot.forEach(p => {
+  if (count >= 4) return;
+
+  const nome = p.val().nome;
+  const dataEntrega = p.val().dataEntrega;
+  const etapas = p.val().etapas || [];
+  const finalizado = etapas.every(e => e.concluido);
+  if (!dataEntrega) return;
+
+  const hoje = new Date();
+  const dtEntrega = new Date(dataEntrega);
+  const dias = Math.ceil((dtEntrega - hoje) / (1000 * 60 * 60 * 24));
+
+  html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 && !finalizado ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
+    Projeto <strong>${nome}</strong> - Entrega em <strong>${dias}</strong> dia(s)
+  </div>`;
+
+  count++;
+});
         document.getElementById('painelAlerta').innerHTML = html;
       });
     }
