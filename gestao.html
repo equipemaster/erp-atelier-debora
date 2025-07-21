@@ -192,6 +192,7 @@
       db.ref('projetos').once('value').then(snapshot => {
         let html = '';
         snapshot.forEach(p => {
+          for (let i = 0; i < 4; i++) {
           const nome = p.val().nome;
           const dataEntrega = p.val().dataEntrega;
           const etapas = p.val().etapas || [];
@@ -203,6 +204,8 @@
           html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 && !finalizado ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
             Projeto <strong>${nome}</strong> - Entrega em <strong>${dias}</strong> dia(s)
           </div>`;
+           }
+          
         });
         document.getElementById('painelAlerta').innerHTML = html;
       });
