@@ -104,6 +104,16 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
+    const etapasKanban = [
+            "Modelagem",
+            "Corte",
+            "Costura",
+            "Prova",
+            "Ajuste",
+            "Lavanderia",
+            "Finalizado"
+        ];
+
     let chart;
     let filtroAtual = 'andamento';
 
