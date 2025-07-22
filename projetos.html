@@ -469,10 +469,12 @@
                 const projeto = snapshot.val();
                 if (!projeto) return;
 
-               let etapas = Array.isArray(projeto.etapas) ? projeto.etapas : [];
+               let etapas = Array.isArray(projeto.etapas) ? projeto.etapas.filter(e => e && e.nome) : [];
+;
 ;
                 // Encontra a última etapa registrada que ainda não tem 'fim' e a finaliza
-                const ultimaEtapaAtiva = etapas.find(e => e.nome === statusAtual && e.fim === null);
+                const ultimaEtapaAtiva = etapas.find(e => e && e.nome === statusAtual && e.fim === null);
+;
                 if (ultimaEtapaAtiva) {
                     ultimaEtapaAtiva.fim = Date.now();
                 } else if (etapas.length > 0) { // Caso a etapa atual já tenha fim, pega a última
