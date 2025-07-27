@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestão de Vestidos - Atelier Débora Freitas</title>
     <link rel="icon" href="favicon-16x16.png" type="image/png">
+     <link rel="icon" href="favicon-16x16.png" type="favicon-16x16.png">
 
     <style>
         /* Basic Reset & Body Styles */
@@ -392,9 +393,9 @@
         <p>&copy; Atelier Débora Freitas</p>
     </footer>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -407,64 +408,70 @@
   appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
   measurementId: "G-ZTCE581F5W"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(firebase.app(), "(default)"); 
-       const auth = firebase.auth(); 
+       const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(); 
+         const auth = firebase.auth(); 
        firebase.firestore().settings({
-      experimentalForceLongPolling: true
-    });
+    merge: true 
+});
+
+
 
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Referências dos elementos DOM
-            const formVenda = document.getElementById("form-venda");
-            const selectVestido = document.querySelector("#form-venda select[name='vestido']");
-            const listaDiv = document.getElementById("lista-disponiveis");
-            const selectDevolucao = document.querySelector("#form-devolucao select[name='vestidoAlugado']");
-            const historicoDiv = document.getElementById("historico-vendas-locacao");
-            const formaPagamentoSelect = document.querySelector("select[name='formaPagamento']");
-            const parcelasSelect = document.getElementById("parcelas");
-            for (let i = 1; i <= 12; i++) {
-  const opt = document.createElement("option");
-  opt.value = i;
-  opt.textContent = `${i}x`;
-  parcelasSelect.appendChild(opt);
-}
+        // Referências dos elementos DOM
+        const formVenda = document.getElementById("form-venda");
+        const selectVestido = document.querySelector("#form-venda select[name='vestido']");
+        const listaDiv = document.getElementById("lista-disponiveis");
+        const selectDevolucao = document.querySelector("#form-devolucao select[name='vestidoAlugado']");
+        const historicoDiv = document.getElementById("historico-vendas-locacao");
+        const formaPagamentoSelect = document.querySelector("select[name='formaPagamento']");
+        const parcelasSelect = document.getElementById("parcelas");
+             
+        for (let i = 1; i <= 12; i++) {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent = `${i}x`;
+            parcelasSelect.appendChild(opt);
+        }
+
 
 
      formaPagamentoSelect.addEventListener("change", () => {
-  if (formaPagamentoSelect.value === "boleto") {
-    parcelasSelect.style.display = "block";
-  } else {
-    parcelasSelect.style.display = "none";
-    parcelasSelect.value = ""; 
-  }
-});
+            if (formaPagamentoSelect.value === "boleto") {
+                parcelasSelect.style.display = "block";
+            } else {
+                parcelasSelect.style.display = "none";
+                parcelasSelect.value = ""; 
+            }
+        });
 formVenda.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const f = e.target;
-  const parcelas = f.parcelas.value;
-});
+            e.preventDefault();
+            const f = e.target;
+            const parcelas = f.parcelas.value;
+            
+        });
 
 
             const formCadastro = document.getElementById("form-cadastro");
-            const formDevolucao = document.getElementById("form-devolucao");
+        const formDevolucao = document.getElementById("form-devolucao");
 
-            const msgCadastroSucesso = document.getElementById("msg-cadastro-sucesso");
-            const msgCadastroErro = document.getElementById("msg-cadastro-erro");
-            const msgVendaSucesso = document.getElementById("mensagem-sucesso");
-            const msgVendaErro = document.getElementById("mensagem-erro-venda");
-            const msgDevolucaoSucesso = document.getElementById("msg-devolucao-sucesso");
-            const msgDevolucaoErro = document.getElementById("msg-devolucao-erro");
+        const msgCadastroSucesso = document.getElementById("msg-cadastro-sucesso");
+        const msgCadastroErro = document.getElementById("msg-cadastro-erro");
+        const msgVendaSucesso = document.getElementById("mensagem-sucesso");
+        const msgVendaErro = document.getElementById("mensagem-erro-venda");
+        const msgDevolucaoSucesso = document.getElementById("msg-devolucao-sucesso");
+        const msgDevolucaoErro = document.getElementById("msg-devolucao-erro");
 
-            const loadingDisponiveis = document.getElementById("loading-disponiveis");
-            const loadingHistorico = document.getElementById("loading-historico");
+        const loadingDisponiveis = document.getElementById("loading-disponiveis");
+        const loadingHistorico = document.getElementById("loading-historico");
 
-            const filtroTipo = document.getElementById("filtro-tipo");
-            const filtroCliente = document.getElementById("filtro-cliente");
-            const filtroDataInicio = document.getElementById("filtro-data-inicio");
-            const filtroDataFim = document.getElementById("filtro-data-fim");
-            const btnExportar = document.getElementById("btn-exportar");
+        const filtroTipo = document.getElementById("filtro-tipo");
+        const filtroCliente = document.getElementById("filtro-cliente");
+        const filtroDataInicio = document.getElementById("filtro-data-inicio");
+        const filtroDataFim = document.getElementById("filtro-data-fim");
+        const btnExportar = document.getElementById("btn-exportar");
+
 
             // --- Funções Utilitárias ---
 
