@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatórios - Atelier</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Relatórios de Transações</h1>
+    <nav>
+            <button onclick="history.back()" style="margin: 10px;">Voltar</button>
+        </nav>
+      
+  </header>
+
+  <main>
+    <section>
+      <h2>Filtrar Transações</h2>
+      <form id="form-filtro">
+        <input type="date" name="inicio" />
+        <input type="date" name="fim" />
+        <select name="tipo">
+          <option value="">Todos os tipos</option>
+          <option value="venda">Venda</option>
+          <option value="aluguel">Aluguel</option>
+        </select>
+        <button type="submit">Filtrar</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Resultados</h2>
+      <table id="tabela-relatorios">
+        <thead>
+          <tr>
+            <th>Data</th><th>Cliente</th><th>Tipo</th><th>Vestido</th><th>Valor</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer><p>&copy; Atelier Débora</p></footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+  databaseURL: "https://erp-ateliedebora-275e7-default-rtdb.firebaseio.com",
+  projectId: "erp-ateliedebora-275e7",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <script>
+    document.getElementById("form-filtro").addEventListener("submit", e => {
+      e.preventDefault();
+      const inicio = e.target.inicio.value ? new Date(e.target.inicio.value) : null;
+      const fim = e.target.fim.value ? new Date(e.target.fim.value) : null;
+      const tipo = e.target.tipo.value;
+
+      let query = db.collection("transacoes").orderBy("timestamp", "desc");
+
+      if (tipo) {
+        query = query.where("tipo", "==", tipo);
+      }
+
+      query.get().then(snapshot => {
+        const tbody = document.querySelector("#tabela-relatorios tbody");
+        tbody.innerHTML = "";
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const t = new Date(d.timestamp.seconds * 1000);
+          if (inicio && t < inicio) return;
+          if (fim && t > new Date(fim.getTime() + 24*60*60*1000)) return;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${d.data}</td>
+            <td>${d.cliente}</td>
+            <td>${d.tipo}</td>
+            <td>${d.item}</td>
+            <td>R$ ${d.valor}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
