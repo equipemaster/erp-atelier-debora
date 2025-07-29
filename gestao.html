@@ -216,44 +216,51 @@ snapshot.forEach(p => {
       });
     }
 
-    function gerarCronogramaSemanal() {
-      const diasUteis = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-      const tabela = document.getElementById('tabelaCronograma');
-      tabela.innerHTML = '';
+   function gerarCronogramaSemanal() {
+  const diasUteis = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+  const tabela = document.getElementById('tabelaCronograma');
+  tabela.innerHTML = '';
 
-      diasUteis.forEach(dia => {
-        const coluna = document.createElement('div');
-        coluna.style.flex = '1';
-        coluna.style.minWidth = '150px';
-        coluna.style.margin = '10px';
-        coluna.innerHTML = `<h4 style="color:#fff;">${dia}</h4><div id="dia-${dia}" style="background:#f9f3e7;color:#000;border-radius:6px;padding:10px;"></div>`;
-        tabela.appendChild(coluna);
-      });
+  diasUteis.forEach(dia => {
+    const coluna = document.createElement('div');
+    coluna.style.flex = '1';
+    coluna.style.minWidth = '150px';
+    coluna.style.margin = '10px';
+    coluna.innerHTML = `<h4 style="color:#fff;">${dia}</h4><div id="dia-${dia}" style="background:#f9f3e7;color:#000;border-radius:6px;padding:10px;"></div>`;
+    tabela.appendChild(coluna);
+  });
 
-      db.ref('projetos').once('value').then(snapshot => {
-        const projetos = [];
-        snapshot.forEach(p => {
-          const val = p.val();
-          if (val.dataEntrega) {
-            projetos.push({
-              nome: val.nome,
-              tipo: val.tipoProjeto || '-',
-              entrega: new Date(val.dataEntrega)
-            });
-          }
-        });
+  db.ref('projetos').once('value').then(snapshot => {
+  const projetos = [];
+  snapshot.forEach(p => {
+    const val = p.val();
+    
+    // Etapas como array de objetos
+    const etapas = val.etapas || []; 
+    const finalizado = etapas.some(etapa => etapa.nome?.toLowerCase().trim() === 'finalizado');
 
-        projetos.sort((a, b) => a.entrega - b.entrega);
-        projetos.slice(0, 5).forEach((proj, i) => {
-          const diaId = `dia-${diasUteis[i]}`;
-          const div = document.getElementById(diaId);
-          const bloco = document.createElement('div');
-          bloco.style.marginBottom = '8px';
-          bloco.innerHTML = `<strong>${proj.nome}</strong><br><small>Entrega: ${proj.entrega.toLocaleDateString()}<br>Tipo: ${proj.tipo}</small>`;
-          div.appendChild(bloco);
-        });
+    if (val.dataEntrega && !finalizado) {
+      projetos.push({
+        nome: val.nome,
+        tipo: val.tipoProjeto || '-',
+        entrega: new Date(val.dataEntrega)
       });
     }
+  });
+
+  projetos.sort((a, b) => a.entrega - b.entrega);
+
+  projetos.slice(0, 5).forEach((proj, i) => {
+    const diaId = `dia-${diasUteis[i]}`;
+    const div = document.getElementById(diaId);
+    const bloco = document.createElement('div');
+    bloco.style.marginBottom = '8px';
+    bloco.innerHTML = `<strong>${proj.nome}</strong><br><small>Entrega: ${proj.entrega.toLocaleDateString()}<br>Tipo: ${proj.tipo}</small>`;
+    div.appendChild(bloco);
+  });
+});
+
+}
   </script>
 </body>
 </html>
