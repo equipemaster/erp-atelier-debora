@@ -57,8 +57,12 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
   </script>
   <script>
+    firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    // Quando logado, então executa o filtro
     document.getElementById("form-filtro").addEventListener("submit", e => {
       e.preventDefault();
       const inicio = e.target.inicio.value ? new Date(e.target.inicio.value) : null;
@@ -89,6 +93,13 @@
           `;
           tbody.appendChild(tr);
         });
+      });
+    });
+  } else {
+    alert("Você precisa estar logado para acessar os relatórios.");
+    // Redirecionar para página de login, se tiver
+  }
+});
       });
     });
   </script>
