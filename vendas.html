@@ -709,7 +709,7 @@ formVenda.addEventListener("submit", async (e) => {
                     const nomeVestido = vestidoDoc.data().nome;
 
                     const transactionData = {
-                    parcelas: formaPagamento === "boleto" ? parcelas : null,
+                    parcelas: formaPagamentoSelect === "boleto" ? parcelas : null,
                         cliente,
                         cpf,
                         telefone,
