@@ -31,39 +31,69 @@
     }
   </script>
   <style>
-    body {
-      font-family: 'Outfit', Outfit;
-      background: #000000;
-      color: #333;
-      text-align: center;
-      padding-top: 100px;
+     body {
+      background-color: black;
+      color: white;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
     }
+
+    .logo {
+      width: 400px;
+      height: auto;
+      display: block;
+      margin-bottom: 20px;
+    }
+
+    .login-box {
+      text-align: center;
+    }
+
     input {
       display: block;
+      width: 250px;
       margin: 10px auto;
       padding: 10px;
-      width: 250px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #c7a17a;
+      border-radius: 5px;
       border: none;
+    }
+
+    button {
+      background-color: #c59d66;
       color: white;
       padding: 10px 20px;
-      border-radius: 4px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
       cursor: pointer;
+      width: 270px;
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
-  <h1>Ateliê Débora Freitas</h1>
-  <h2>Login</h2>
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="senha" placeholder="Senha" />
-  <button onclick="login(document.getElementById('email').value, document.getElementById('senha').value)">Entrar</button>
-<footer>
-    &copy; 2025 Ateliê Débora Freitas. Todos os direitos reservados.
-  </footer>
+
+  <img src="logo.jpeg" alt="Logo DF" class="logo">
+
+  <div class="login-box">
+    <h2>Login</h2>
+    <input type="email" placeholder="Email">
+    <input type="password" placeholder="Senha">
+    <button>Entrar</button>
+  </div>
+    
+    <footer>
+      © 2025 Ateliê Débora Freitas. Todos os direitos reservados.
+    </footer>
+  </div>
 </body>
 </html>
