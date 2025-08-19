@@ -1,37 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
- <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Ateliê Débora Freitas</title>
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-     apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  projectId: "erp-ateliedebora-275e7",
-  storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-  messagingSenderId: "375960061963",
-  appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-  measurementId: "G-ZTCE581F5W"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    async function login(email, senha) {
-      try {
-        await auth.signInWithEmailAndPassword(email, senha);
-        window.location = 'home.html';
-      } catch (e) {
-        alert('Erro no login: ' + e.message);
-      }
-    }
-  </script>
+  
   <style>
-     body {
+    body {
       background-color: black;
       color: white;
       margin: 0;
@@ -45,9 +23,10 @@
 
     .logo {
       width: 400px;
-      height: auto;
+      height: 100px;
       display: block;
       margin-bottom: 20px;
+      object-fit: cover;
     }
 
     .login-box {
@@ -83,17 +62,48 @@
 <body>
 
   <img src="logo.jpeg" alt="Logo DF" class="logo">
-
   <div class="login-box">
+  <form id="loginForm">
     <h2>Login</h2>
-    <input type="email" placeholder="Email">
-    <input type="password" placeholder="Senha">
-    <button>Entrar</button>
-  </div>
-    
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="senha" placeholder="Senha" required>
+    <button type="submit">Entrar</button>
+  </form>
+    </div>
     <footer>
       © 2025 Ateliê Débora Freitas. Todos os direitos reservados.
     </footer>
   </div>
+
+<script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+  databaseURL: "https://erp-ateliedebora-275e7-default-rtdb.firebaseio.com",
+  projectId: "erp-ateliedebora-275e7",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    console.log(auth)
+     // Função de login com Firebase Auth (já existente)
+    async function login(email, senha) {
+      try {
+        await auth.signInWithEmailAndPassword(email, senha);
+        window.location = 'home.html';
+      } catch (e) {
+        alert('Erro no login: ' + e.message);
+      }
+    }
+
+    // Captura o evento de envio do formulário
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', function(event) {
+      event.preventDefault(); // Impede envio padrão
+      const email = form.email.value;
+      const senha = form.senha.value;
+      login(email, senha); // Chama sua função
+    });
+  </script>
+
 </body>
 </html>
