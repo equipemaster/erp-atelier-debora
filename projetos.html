@@ -430,7 +430,7 @@
                             console.log(formattedDate); // Saída: 02/01/2024
 
                             let buttonsHtml = `
-                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.dataEntrega}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
+                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.formattedDate}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
                             `;
 
                             if (projeto.statusAtual !== 'Finalizado') {
