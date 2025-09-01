@@ -427,10 +427,10 @@
                             card.setAttribute('data-id', key); // Armazena o ID do Firebase no cartão
                             dt = new Date(projeto.dataEntrega)
                             const formattedDate = new Intl.DateTimeFormat('pt-BR').format(dt);
-                            console.log("testhhhhhe",formattedDate); // Saída: 02/01/2024
+                           // console.log("testhhhhhe",formattedDate); // Saída: 02/01/2024
 
                             let buttonsHtml = `
-                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${projeto.formattedDate}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
+                                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${formattedDate}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
                             `;
 
                             if (projeto.statusAtual !== 'Finalizado') {
