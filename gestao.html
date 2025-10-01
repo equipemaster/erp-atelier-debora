@@ -195,7 +195,6 @@
   const tabela = document.getElementById('tabelaCronograma');
   tabela.innerHTML = '';
 
-  // Cria as colunas de segunda a sexta
   diasUteis.forEach((dia, index) => {
     const coluna = document.createElement('div');
     coluna.style.flex = '1';
@@ -210,47 +209,44 @@
 
   const hoje = new Date();
   const segunda = new Date(hoje);
-  segunda.setDate(hoje.getDate() - hoje.getDay() + 1); // segunda da semana atual
+  segunda.setDate(hoje.getDate() - hoje.getDay() + 1);
 
   const projetos = Object.values(dados)
-    .filter(p => {
-      const status = p.statusAtual?.toLowerCase().trim();
-      return p.dataEntrega && status !== 'finalizado';
+    .filter(projeto => {
+      const status = (projeto.statusAtual || '').toLowerCase().trim();
+      return projeto.dataEntrega && status !== 'finalizado';
     })
-    .map(p => ({
-      ...p,
-      entregaDate: new Date(p.dataEntrega)
+    .map(projeto => ({
+      ...projeto,
+      entregaDate: new Date(projeto.dataEntrega)
     }))
-    .filter(p => p.entregaDate >= segunda) // só entrega futura nesta semana ou mais
+    .filter(proj => proj.entregaDate >= segunda)
     .sort((a, b) => a.entregaDate - b.entregaDate);
 
   let diaIndex = 0;
 
-  projetos.slice(0, 5).forEach(projeto => {
-    if (diaIndex >= diasUteis.length) diaIndex = 0; // reinicia se passar de sexta
+  projetos.slice(0, 5).forEach(proj => {
+    if (diaIndex >= diasUteis.length) diaIndex = 0;
 
     const coluna = document.getElementById(`dia-${diaIndex}`);
     const bloco = document.createElement('div');
     bloco.style.marginBottom = '8px';
+    bloco.style.background = '#000';
+    bloco.style.color = '#fff';
+    bloco.style.borderRadius = '8px';
+    bloco.style.padding = '10px';
+    bloco.style.boxShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+
     bloco.innerHTML = `
-      <strong>${projeto.nome}</strong><br>
-      <small>Entrega: ${projeto.entregaDate.toLocaleDateString()}<br>
-      Tipo: ${projeto.tipoProjeto || '-'}</small>
+      <strong>${proj.nome}</strong><br>
+      <small>Entrega: ${proj.entregaDate.toLocaleDateString()}<br>
+      Tipo: ${proj.tipoProjeto || '-'}</small>
     `;
+
     coluna.appendChild(bloco);
     diaIndex++;
   });
-  projetos.sort((a, b) => a.entrega - b.entrega);
 
-      projetos.slice(0, 5).forEach((proj, i) => {
-        const diaId = `dia-${diasUteis[i]}`;
-        const div = document.getElementById(diaId);
-        const bloco = document.createElement('div');
-        bloco.style.marginBottom = '8px';
-        bloco.innerHTML = `<strong>${proj.nome}</strong><br><small>Entrega: ${proj.entrega.toLocaleDateString()}<br>Tipo: ${proj.tipo}</small>`;
-        div.appendChild(bloco);
-      });
-    }
   </script>
 </body>
 </html>
