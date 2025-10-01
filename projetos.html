@@ -55,6 +55,12 @@
         .cadastro-form button:hover {
             background: #a87b51;
         }
+       
+        <div style="text-align: center; margin-bottom: 20px;">/* Pesquisar */
+  <input type="text" id="campoBusca" placeholder="Buscar projeto..." style="padding: 10px; border-radius: 5px; width: 250px; border: none; font-size: 1rem;">
+  <span style="margin-left: -30px; cursor: pointer;">🔍</span>
+</div>
+
         #kanbanContainer {
             display: flex;
             flex-wrap: nowrap;
@@ -269,6 +275,7 @@
         </select>
         <p>Data de Entrega </p>
         <input type="date" id="dataEntrega">
+        <p>Hora de Entrega</p>
         <input type="time" id="horaEntrega">
         <select id="tipoProjeto">
             <option disabled selected>Tipo</option>
@@ -465,6 +472,9 @@ alert("Ocorreu um erro ao retornar a etapa do projeto.");
                 if (projetos) {
                     Object.keys(projetos).forEach(key => {
                         const projeto = projetos[key];
+                        const termoBusca = document.getElementById('campoBusca')?.value.toLowerCase() || '';
+                        if (termoBusca && !projeto.nome.toLowerCase().includes(termoBusca)) return;
+
                         // Exibe todos os projetos no Kanban, incluindo "Finalizado"
                         if (etapasKanban.includes(projeto.statusAtual)) {
                             const card = document.createElement('div');
