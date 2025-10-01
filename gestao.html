@@ -190,24 +190,26 @@
       });
     }
 
-    function gerarCronogramaSemanal(snapshot) {
+   function gerarCronogramaSemanal(snapshot) {
   const diasUteis = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
   const tabela = document.getElementById('tabelaCronograma');
   tabela.innerHTML = '';
 
-  // Cria colunas de Segunda a Sexta
+  // Cria colunas Segunda a Sexta (getDay 1 a 5)
   for (let i = 1; i <= 5; i++) {
-    const nomeDia = diasUteis[i];
     const coluna = document.createElement('div');
     coluna.style.flex = '1';
     coluna.style.minWidth = '150px';
     coluna.style.margin = '10px';
-    coluna.innerHTML = `<h4 style="color:#fff;">${nomeDia}</h4><div id="dia-${i}" style="background:#f9f3e7;color:#000;border-radius:6px;padding:10px;min-height:80px;"></div>`;
+    coluna.innerHTML = `<h4 style="color:#fff;">${diasUteis[i]}</h4><div id="dia-${i}" style="background:#f9f3e7;color:#000;border-radius:6px;padding:10px;min-height:80px;"></div>`;
     tabela.appendChild(coluna);
   }
 
   const dados = snapshot.val();
-  if (!dados) return;
+  if (!dados) {
+    console.warn("⚠️ Nenhum projeto encontrado.");
+    return;
+  }
 
   Object.values(dados).forEach(projeto => {
     const etapas = projeto.etapas || [];
@@ -215,9 +217,10 @@
 
     if (projeto.dataEntrega && !finalizado) {
       const dataEntrega = new Date(projeto.dataEntrega);
-      const diaSemana = dataEntrega.getDay(); // 0 (domingo) a 6 (sábado)
+      const diaSemana = dataEntrega.getDay(); // 0 = domingo, 1 = segunda ...
 
-      // Apenas dias úteis (segunda a sexta)
+      console.log(`📦 Projeto: ${projeto.nome}, Entrega: ${dataEntrega.toLocaleDateString()}, Dia: ${diasUteis[diaSemana]}`);
+
       if (diaSemana >= 1 && diaSemana <= 5) {
         const coluna = document.getElementById(`dia-${diaSemana}`);
         if (coluna) {
@@ -225,11 +228,14 @@
           bloco.style.marginBottom = '8px';
           bloco.innerHTML = `<strong>${projeto.nome}</strong><br><small>Entrega: ${dataEntrega.toLocaleDateString()}<br>Tipo: ${projeto.tipoProjeto || '-'}</small>`;
           coluna.appendChild(bloco);
+        } else {
+          console.warn(`🧱 Coluna dia-${diaSemana} não encontrada.`);
         }
       }
     }
   });
 }
+
 
 
       projetos.sort((a, b) => a.entrega - b.entrega);
