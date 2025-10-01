@@ -22,10 +22,6 @@
       color: #c7a17a;
       margin-bottom: 1rem;
     }
-    canvas {
-      max-width: 600px;
-      margin: 0 auto;
-    }
     .voltar {
       position: absolute;
       top: 20px;
@@ -43,26 +39,23 @@
     #kanbanContainer {
       display: flex;
       justify-content: space-between;
-       flex-wrap: nowrap;
-      overflow-x: auto; /* Habilita rolagem horizontal */
+      flex-wrap: nowrap;
+      overflow-x: auto;
       gap: 10px;
       max-width: 1000px;
       margin: 20px auto;
     }
     #kanbanContainer > div {
-        flex: 0 0 160px; /* Largura fixa para as colunas */
-        background: #f9f3e7;
-        padding: 10px;
-        border-radius: 6px;
-        overflow-y: auto; /* Rolagem vertical para os cards dentro da coluna */
-        height: 400px; /* Altura fixa para as colunas */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        color: #000;
-        display: flex; /* Para flex-direction column */
-        flex-direction: column;
-        }
-    #kanbanContainer h4 {
-      color: #333;
+      flex: 0 0 160px;
+      background: #f9f3e7;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-y: auto;
+      height: 400px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      color: #000;
+      display: flex;
+      flex-direction: column;
     }
     .card {
       background: #fff;
@@ -78,7 +71,7 @@
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
   <h1>Gestão à Vista - Projetos</h1>
 
-  <div id="painelAlerta"></div>
+  <div id="painelAlerta"></div> <!-- Corrigido para usar painelAlerta -->
 
   <section id="visaoEtapas">
     <h2>Visão de Etapas de Produção</h2>
@@ -94,30 +87,29 @@
 
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  projectId: "erp-ateliedebora-275e7",
-  storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-  messagingSenderId: "375960061963",
-  appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-  measurementId: "G-ZTCE581F5W"
+      apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+      authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+      projectId: "erp-ateliedebora-275e7",
+      storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
+      messagingSenderId: "375960061963",
+      appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
+      measurementId: "G-ZTCE581F5W"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
     const etapasKanban = [
-            "Modelagem",
-            "Corte",
-            "Costura",
-            "Acabamento",
-            "Prova",
-            "Ajuste",
-            "Lavanderia",
-            "Finalizado"
-        ];
+      "Modelagem",
+      "Corte",
+      "Costura",
+      "Acabamento",
+      "Prova",
+      "Ajuste",
+      "Lavanderia",
+      "Finalizado"
+    ];
 
-    
     auth.onAuthStateChanged(user => {
       if (!user) {
         alert('Você precisa estar logado.');
@@ -125,9 +117,10 @@
         return;
       }
 
-      db.ref('projetos').on('value', () => {
-        atualizarKanban();
-        gerarCronogramaSemanal();
+      // 🔁 Atualização em tempo real
+      db.ref('projetos').on('value', (snapshot) => {
+        atualizarKanban(snapshot);
+        gerarCronogramaSemanal(snapshot);
       });
 
       atualizarAlerta();
@@ -135,128 +128,111 @@
     });
 
     function atualizarKanban(snapshot) {
-  const kanbanContainer = document.getElementById('kanbanContainer');
-  kanbanContainer.innerHTML = '';
-  etapasKanban.forEach(etapa => {
-    const coluna = document.createElement('div');
-    coluna.id = `coluna-${etapa.toLowerCase().replace(/\s/g, '')}`;
-    coluna.innerHTML = `<h3>${etapa}</h3>`;
-    kanbanContainer.appendChild(coluna);
-  });
+      const kanbanContainer = document.getElementById('kanbanContainer');
+      kanbanContainer.innerHTML = '';
+      etapasKanban.forEach(etapa => {
+        const coluna = document.createElement('div');
+        coluna.id = `coluna-${etapa.toLowerCase().replace(/\s/g, '')}`;
+        coluna.innerHTML = `<h3>${etapa}</h3>`;
+        kanbanContainer.appendChild(coluna);
+      });
 
-  const projetos = snapshot.val();
-  etapasKanban.forEach(etapa => {
-    const colunaDiv = document.getElementById(`coluna-${etapa.toLowerCase().replace(/\s/g, '')}`);
-    if (colunaDiv) {
-      Array.from(colunaDiv.children).forEach(child => {
-        if (child.classList.contains('card')) {
-          colunaDiv.removeChild(child);
+      const projetos = snapshot.val();
+      if (!projetos) return;
+
+      Object.keys(projetos).forEach(key => {
+        const projeto = projetos[key];
+        if (etapasKanban.includes(projeto.statusAtual)) {
+          const card = document.createElement('div');
+          card.classList.add('card');
+          card.setAttribute('data-id', key);
+          card.innerHTML = `
+            <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
+            Entrega: ${projeto.dataEntrega} às ${projeto.horaEntrega}<br>
+            Status: ${projeto.statusAtual}
+          `;
+          const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\s/g, '')}`);
+          if (colunaDestino) {
+            colunaDestino.appendChild(card);
+          }
         }
       });
     }
-  });
 
-  if (projetos) {
-    Object.keys(projetos).forEach(key => {
-      const projeto = projetos[key];
-      if (etapasKanban.includes(projeto.statusAtual)) {
-        const card = document.createElement('div');
-        card.classList.add('card');
-        card.setAttribute('data-id', key);
-        card.innerHTML = `
-          <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
-          Entrega: ${projeto.dataEntrega} às ${projeto.horaEntrega}<br>
-          Status: ${projeto.statusAtual}
-        `;
-        const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\s/g, '')}`);
-        if (colunaDestino) {
-          colunaDestino.appendChild(card);
-        }
-      }
-    });
-  }
-}
+    function atualizarAlerta() {
+      db.ref('projetos').once('value').then(snapshot => {
+        let html = '';
+        let count = 0;
 
+        snapshot.forEach(p => {
+          if (count >= 4) return;
 
-function atualizarAlerta() {
-  db.ref('projetos').once('value').then(snapshot => {
-    let html = '';
-    let count = 0;
+          const val = p.val();
+          const nome = val.nome;
+          const dataEntrega = val.dataEntrega;
+          const etapas = val.etapas || [];
 
-    snapshot.forEach(p => {
-      if (count >= 4) return;
+          const finalizado = etapas.some(e => e.nome?.toLowerCase().trim() === 'finalizado');
+          if (!dataEntrega || finalizado) return;
 
-      const val = p.val();
-      const nome = val.nome;
-      const dataEntrega = val.dataEntrega;
-      const etapas = val.etapas || [];
+          const hoje = new Date();
+          const dtEntrega = new Date(dataEntrega);
+          const dias = Math.ceil((dtEntrega - hoje) / (1000 * 60 * 60 * 24));
 
-      // Considera finalizado se tiver uma etapa com nome "Finalizado"
-      const finalizado = etapas.some(e => e.nome?.toLowerCase().trim() === 'finalizado');
+          html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
+            Projeto <strong>${nome}</strong> - Entrega em <strong>${dias}</strong> dia(s)
+          </div>`;
 
-      if (!dataEntrega || finalizado) return; // <-- Ignora projetos finalizados
+          count++;
+        });
 
-      const hoje = new Date();
-      const dtEntrega = new Date(dataEntrega);
-      const dias = Math.ceil((dtEntrega - hoje) / (1000 * 60 * 60 * 24));
-
-      html += `<div style="margin:10px 0;padding:10px;background:${dias <= 3 ? '#ff4d4d' : '#eee'};color:#000;border-radius:5px;">
-        Projeto <strong>${nome}</strong> - Entrega em <strong>${dias}</strong> dia(s)
-      </div>`;
-
-      count++;
-    });
-
-    document.getElementById('alertasEntrega').innerHTML = html;
-  });
-}
-
-
-   function gerarCronogramaSemanal() {
-  const diasUteis = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-  const tabela = document.getElementById('tabelaCronograma');
-  tabela.innerHTML = '';
-
-  diasUteis.forEach(dia => {
-    const coluna = document.createElement('div');
-    coluna.style.flex = '1';
-    coluna.style.minWidth = '150px';
-    coluna.style.margin = '10px';
-    coluna.innerHTML = `<h4 style="color:#fff;">${dia}</h4><div id="dia-${dia}" style="background:#f9f3e7;color:#000;border-radius:6px;padding:10px;"></div>`;
-    tabela.appendChild(coluna);
-  });
-
-  db.ref('projetos').once('value').then(snapshot => {
-  const projetos = [];
-  snapshot.forEach(p => {
-    const val = p.val();
-    
-    // Etapas como array de objetos
-    const etapas = val.etapas || []; 
-    const finalizado = etapas.some(etapa => etapa.nome?.toLowerCase().trim() === 'finalizado');
-
-    if (val.dataEntrega && !finalizado) {
-      projetos.push({
-        nome: val.nome,
-        tipo: val.tipoProjeto || '-',
-        entrega: new Date(val.dataEntrega)
+        document.getElementById('painelAlerta').innerHTML = html;
       });
     }
-  });
 
-  projetos.sort((a, b) => a.entrega - b.entrega);
+    function gerarCronogramaSemanal(snapshot) {
+      const diasUteis = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+      const tabela = document.getElementById('tabelaCronograma');
+      tabela.innerHTML = '';
 
-  projetos.slice(0, 5).forEach((proj, i) => {
-    const diaId = `dia-${diasUteis[i]}`;
-    const div = document.getElementById(diaId);
-    const bloco = document.createElement('div');
-    bloco.style.marginBottom = '8px';
-    bloco.innerHTML = `<strong>${proj.nome}</strong><br><small>Entrega: ${proj.entrega.toLocaleDateString()}<br>Tipo: ${proj.tipo}</small>`;
-    div.appendChild(bloco);
-  });
-});
+      diasUteis.forEach(dia => {
+        const coluna = document.createElement('div');
+        coluna.style.flex = '1';
+        coluna.style.minWidth = '150px';
+        coluna.style.margin = '10px';
+        coluna.innerHTML = `<h4 style="color:#fff;">${dia}</h4><div id="dia-${dia}" style="background:#f9f3e7;color:#000;border-radius:6px;padding:10px;"></div>`;
+        tabela.appendChild(coluna);
+      });
 
-}
+      const projetos = [];
+      const dados = snapshot.val();
+      if (!dados) return;
+
+      Object.keys(dados).forEach(key => {
+        const val = dados[key];
+        const etapas = val.etapas || [];
+        const finalizado = etapas.some(etapa => etapa.nome?.toLowerCase().trim() === 'finalizado');
+
+        if (val.dataEntrega && !finalizado) {
+          projetos.push({
+            nome: val.nome,
+            tipo: val.tipoProjeto || '-',
+            entrega: new Date(val.dataEntrega)
+          });
+        }
+      });
+
+      projetos.sort((a, b) => a.entrega - b.entrega);
+
+      projetos.slice(0, 5).forEach((proj, i) => {
+        const diaId = `dia-${diasUteis[i]}`;
+        const div = document.getElementById(diaId);
+        const bloco = document.createElement('div');
+        bloco.style.marginBottom = '8px';
+        bloco.innerHTML = `<strong>${proj.nome}</strong><br><small>Entrega: ${proj.entrega.toLocaleDateString()}<br>Tipo: ${proj.tipo}</small>`;
+        div.appendChild(bloco);
+      });
+    }
   </script>
 </body>
 </html>
