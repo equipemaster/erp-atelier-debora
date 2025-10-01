@@ -190,7 +190,7 @@
       });
     }
 
-   function gerarCronogramaSemanal(snapshot) {
+  function gerarCronogramaSemanal(snapshot) {
   const diasUteis = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
   const tabela = document.getElementById('tabelaCronograma');
   tabela.innerHTML = '';
@@ -206,20 +206,13 @@
   }
 
   const dados = snapshot.val();
-  if (!dados) {
-    console.warn("⚠️ Nenhum projeto encontrado.");
-    return;
-  }
+  if (!dados) return;
 
   Object.values(dados).forEach(projeto => {
-    const etapas = projeto.etapas || [];
-    const finalizado = etapas.some(etapa => etapa.nome?.toLowerCase().trim() === 'finalizado');
-
-    if (projeto.dataEntrega && !finalizado) {
+    // ✅ verifica statusAtual diretamente
+    if (projeto.dataEntrega && projeto.statusAtual?.toLowerCase().trim() !== 'finalizado') {
       const dataEntrega = new Date(projeto.dataEntrega);
-      const diaSemana = dataEntrega.getDay(); // 0 = domingo, 1 = segunda ...
-
-      console.log(`📦 Projeto: ${projeto.nome}, Entrega: ${dataEntrega.toLocaleDateString()}, Dia: ${diasUteis[diaSemana]}`);
+      const diaSemana = dataEntrega.getDay(); // 0 domingo, 1 segunda ...
 
       if (diaSemana >= 1 && diaSemana <= 5) {
         const coluna = document.getElementById(`dia-${diaSemana}`);
@@ -228,12 +221,12 @@
           bloco.style.marginBottom = '8px';
           bloco.innerHTML = `<strong>${projeto.nome}</strong><br><small>Entrega: ${dataEntrega.toLocaleDateString()}<br>Tipo: ${projeto.tipoProjeto || '-'}</small>`;
           coluna.appendChild(bloco);
-        } else {
-          console.warn(`🧱 Coluna dia-${diaSemana} não encontrada.`);
         }
       }
     }
   });
+}
+
 
    projetos.sort((a, b) => a.entrega - b.entrega);
 
