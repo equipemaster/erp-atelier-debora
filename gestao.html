@@ -234,11 +234,8 @@
       }
     }
   });
-}
 
-
-
-      projetos.sort((a, b) => a.entrega - b.entrega);
+   projetos.sort((a, b) => a.entrega - b.entrega);
 
       projetos.slice(0, 5).forEach((proj, i) => {
         const diaId = `dia-${diasUteis[i]}`;
