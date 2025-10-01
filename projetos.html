@@ -387,7 +387,51 @@
                 alert("Ocorreu um erro ao cadastrar o projeto. Por favor, tente novamente.");
             });
         }
+// Função voltarEtapa 
+async function voltarEtapa(id, statusAtual) {
+const currentIndex = etapasKanban.indexOf(statusAtual);
 
+
+if (currentIndex <= 0) {
+alert("Este projeto já está na primeira etapa.");
+return;
+}
+
+
+const projetoRef = db.ref('projetos/' + id);
+await projetoRef.once('value').then(async snapshot => {
+const projeto = snapshot.val();
+if (!projeto) return;
+
+
+let etapas = projeto.etapas || [];
+
+
+// Finaliza a etapa atual
+const etapaAtual = etapas.find(e => e.nome === statusAtual && e.fim === null);
+if (etapaAtual) {
+etapaAtual.fim = Date.now();
+}
+
+
+const etapaAnterior = etapasKanban[currentIndex - 1];
+
+
+etapas.push({ nome: etapaAnterior, inicio: Date.now(), fim: null });
+
+
+await projetoRef.update({
+statusAtual: etapaAnterior,
+etapas: etapas
+});
+
+
+alert(`Projeto retornado para: ${etapaAnterior} 👈`);
+}).catch(error => {
+console.error("Erro ao retornar etapa:", error);
+alert("Ocorreu um erro ao retornar a etapa do projeto.");
+});
+}
         // Função para desenhar o quadro Kanban
         function desenharKanban() {
             const kanbanContainer = document.getElementById('kanbanContainer');
@@ -433,17 +477,16 @@
                                 <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${formattedDate}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
                             `;
 
-                            if (projeto.statusAtual !== 'Finalizado') {
-                                buttonsHtml += `
-                                    <button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>
-                                `;
-                            } else {
-                                buttonsHtml += `
-                                    <button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>
-                                `;
-                            }
+                           if (projeto.statusAtual !== 'Finalizado') {
+                            const currentIndex = etapasKanban.indexOf(projeto.statusAtual);
+                                            if (currentIndex > 0) {
+                            buttonsHtml += `<button onclick="voltarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #ffc107; color: #333;">Voltar</button>`;
+    }
+                            buttonsHtml += `<button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>`;
+                        } else {
+                                buttonsHtml += `<button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>`;
+        }
                             buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
-
                             card.innerHTML = `
                                 <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
                                 Entrega: ${formattedDate} às ${projeto.horaEntrega}<br>
