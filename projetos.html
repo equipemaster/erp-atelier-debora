@@ -436,341 +436,295 @@ console.error("Erro ao retornar etapa:", error);
 alert("Ocorreu um erro ao retornar a etapa do projeto.");
 });
 }
-        // Função para desenhar o quadro Kanban
-function desenharKanban() {
-    const kanbanContainer = document.getElementById('kanbanContainer');
-    kanbanContainer.innerHTML = ''; // Limpa o container para evitar duplicação de colunas
 
-    // Cria as colunas do Kanban
-    etapasKanban.forEach(etapa => {
+function desenharKanban() {
+      const kanbanContainer = document.getElementById('kanbanContainer');
+      kanbanContainer.innerHTML = '';
+
+      etapasKanban.forEach(etapa => {
         const coluna = document.createElement('div');
-        coluna.id = `coluna-${etapa.toLowerCase().replace(/\s/g, '')}`; // ID único para a coluna
+        coluna.id = `coluna-${etapa.toLowerCase().replace(/\\s/g, '')}`;
         coluna.innerHTML = `<h3>${etapa}</h3>`;
         kanbanContainer.appendChild(coluna);
-    });
+      });
 
-    // Escuta as mudanças nos projetos em tempo real no Firebase
-    db.ref('projetos').on('value', (snapshot) => {
+      db.ref('projetos').on('value', (snapshot) => {
         const projetos = snapshot.val();
 
-        // Limpa todos os cartões existentes em todas as colunas antes de redesenhar
         etapasKanban.forEach(etapa => {
-            const colunaDiv = document.getElementById(`coluna-${etapa.toLowerCase().replace(/\s/g, '')}`);
-            if (colunaDiv) {
-                Array.from(colunaDiv.children).forEach(child => {
-                    if (child.classList.contains('card')) {
-                        colunaDiv.removeChild(child);
-                    }
-                });
-            }
+          const colunaDiv = document.getElementById(`coluna-${etapa.toLowerCase().replace(/\\s/g, '')}`);
+          if (colunaDiv) {
+            Array.from(colunaDiv.children).forEach(child => {
+              if (child.classList.contains('card')) {
+                colunaDiv.removeChild(child);
+              }
+            });
+          }
         });
 
         if (projetos) {
-            Object.keys(projetos).forEach(key => {
-                const projeto = projetos[key];
-                const termoBusca = document.getElementById('campoBusca')?.value.toLowerCase() || '';
-                if (termoBusca && !projeto.nome.toLowerCase().includes(termoBusca)) return;
+          Object.keys(projetos).forEach(key => {
+            const projeto = projetos[key];
+            const termoBusca = document.getElementById('campoBusca')?.value.toLowerCase() || '';
+            if (termoBusca && !projeto.nome.toLowerCase().includes(termoBusca)) return;
 
-                if (etapasKanban.includes(projeto.statusAtual)) {
-                    const card = document.createElement('div');
-                    card.classList.add('card');
-                    card.setAttribute('data-id', key);
-                    const dt = new Date(projeto.dataEntrega);
-                    const formattedDate = new Intl.DateTimeFormat('pt-BR').format(dt);
+            if (etapasKanban.includes(projeto.statusAtual)) {
+              const card = document.createElement('div');
+              card.classList.add('card');
+              card.setAttribute('data-id', key);
+              const dt = new Date(projeto.dataEntrega);
+              const formattedDate = new Intl.DateTimeFormat('pt-BR').format(dt);
 
-                    let buttonsHtml = `
-                        <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${formattedDate}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
-                    `;
+              let buttonsHtml = `
+                <button onclick="abrirModalEdicao('${key}', '${projeto.nome}', '${formattedDate}', '${projeto.horaEntrega}', '${projeto.tipoProjeto}')">Editar</button>
+              `;
 
-                    if (projeto.statusAtual !== 'Finalizado') {
-                        const currentIndex = etapasKanban.indexOf(projeto.statusAtual);
-                        if (currentIndex > 0) {
-                            buttonsHtml += `<button onclick="voltarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #ffc107; color: #333;">Voltar</button>`;
-                        }
-                        buttonsHtml += `<button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>`;
-                    } else {
-                        buttonsHtml += `<button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>`;
-                    }
-
-                    buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
-
-                    card.innerHTML = `
-                        <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
-                        Entrega: ${formattedDate} às ${projeto.horaEntrega}<br>
-                        Status: ${projeto.statusAtual}
-                        <div class="card-actions">${buttonsHtml}</div>
-                        <div class="cronometro">
-                            <button onclick="iniciarContagem('${key}', '${projeto.statusAtual}')">Iniciar</button>
-                            <button onclick="pausarContagem('${key}', '${projeto.statusAtual}')">Pausar</button>
-                            <button onclick="zerarContagem('${key}', '${projeto.statusAtual}')">Zerar</button>
-                            <p>Tempo atual: <span id="tempo-${key}">00h 00m 00s</span></p>
-                        </div>
-                    `;
-
-                    const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\s/g, '')}`);
-                    if (colunaDestino) {
-                        colunaDestino.appendChild(card);
-                    }
+              if (projeto.statusAtual !== 'Finalizado') {
+                const currentIndex = etapasKanban.indexOf(projeto.statusAtual);
+                if (currentIndex > 0) {
+                  buttonsHtml += `<button onclick="voltarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #ffc107; color: #333;">Voltar</button>`;
                 }
-            });
-        }
-    });
-}
+                buttonsHtml += `<button onclick="avancarEtapa('${key}', '${projeto.statusAtual}')" style="background-color: #28a745;">Próximo</button>`;
+              } else {
+                buttonsHtml += `<button onclick="restaurarProjeto('${key}', '${etapasKanban[0]}')" style="background-color: #007bff;">Restaurar</button>`;
+              }
+              buttonsHtml += `<button onclick="deletarProjeto('${key}')" style="background-color: #dc3545;">Excluir</button>`;
 
+              card.innerHTML = `
+                <strong>${projeto.nome}</strong> (${projeto.tipoProjeto})<br>
+                Entrega: ${formattedDate} às ${projeto.horaEntrega}<br>
+                Status: ${projeto.statusAtual}
+                <div class="card-actions">${buttonsHtml}</div>
+                <div class="cronometro">
+                  <button onclick="iniciarContagem('${key}', '${projeto.statusAtual}')">Iniciar</button>
+                  <button onclick="pausarContagem('${key}', '${projeto.statusAtual}')">Pausar</button>
+                  <button onclick="zerarContagem('${key}', '${projeto.statusAtual}')">Zerar</button>
+                  <p>Tempo atual: <span id="tempo-${key}">00h 00m 00s</span></p>
+                </div>
+              `;
 
-        // Função para avançar o projeto para a próxima etapa no Kanban
-        async function avancarEtapa(id, statusAtual) {
-            const currentIndex = etapasKanban.indexOf(statusAtual);
-
-            if (currentIndex === -1) {
-                alert("Status atual inválido.");
-                return;
+              const colunaDestino = document.getElementById(`coluna-${projeto.statusAtual.toLowerCase().replace(/\\s/g, '')}`);
+              if (colunaDestino) {
+                colunaDestino.appendChild(card);
+              }
             }
+          });
+        }
+      });
+    }
 
-            // Busca os dados atuais do projeto para manipular as etapas
-            const projetoRef = db.ref('projetos/' + id);
-            await projetoRef.once('value').then(async snapshot => {
-                const projeto = snapshot.val();
-                if (!projeto) return;
+    async function avancarEtapa(id, statusAtual) {
+      const currentIndex = etapasKanban.indexOf(statusAtual);
+      if (currentIndex === -1) {
+        alert("Status atual inválido.");
+        return;
+      }
 
-               let etapas = Array.isArray(projeto.etapas) ? projeto.etapas.filter(e => e && e.nome) : [];
-;
-;
-                // Encontra a última etapa registrada que ainda não tem 'fim' e a finaliza
-                const ultimaEtapaAtiva = etapas.find(e => e && e.nome === statusAtual && e.fim === null);
-;
-                if (ultimaEtapaAtiva) {
-                    ultimaEtapaAtiva.fim = Date.now();
-                } else if (etapas.length > 0) { // Caso a etapa atual já tenha fim, pega a última
-                    etapas[etapas.length - 1].fim = Date.now();
-                }
+      const projetoRef = db.ref('projetos/' + id);
+      await projetoRef.once('value').then(async snapshot => {
+        const projeto = snapshot.val();
+        if (!projeto) return;
 
-                const proximoStatus = etapasKanban[currentIndex + 1];
+        let etapas = Array.isArray(projeto.etapas) ? projeto.etapas.filter(e => e && e.nome) : [];
 
-                if (proximoStatus) {
-                    // Adiciona a nova etapa com início agora e fim null
-                    etapas.push({ nome: proximoStatus, inicio: Date.now(), fim: null });
-                    await projetoRef.update({
-                        statusAtual: proximoStatus,
-                        etapas: etapas
-                    });
-                    alert(`Projeto avançado para: ${proximoStatus} 👍`);
-                } else {
-                    alert("Este projeto já está na última etapa.");
-                }
-            }).catch(error => {
-                console.error("Erro ao avançar etapa:", error);
-                alert("Ocorreu um erro ao avançar a etapa do projeto.");
-            });
+        const ultimaEtapaAtiva = etapas.find(e => e && e.nome === statusAtual && e.fim === null);
+        if (ultimaEtapaAtiva) {
+          ultimaEtapaAtiva.fim = Date.now();
+        } else if (etapas.length > 0) {
+          etapas[etapas.length - 1].fim = Date.now();
         }
 
-
-        // Função para deletar um projeto
-        function deletarProjeto(id) {
-            if (confirm('Tem certeza que deseja excluir este projeto permanentemente? Essa ação não pode ser desfeita.')) {
-                db.ref('projetos/' + id).remove().then(() => {
-                    alert('Projeto excluído com sucesso! 🗑️');
-                }).catch(error => {
-                    console.error("Erro ao excluir projeto:", error);
-                    alert("Ocorreu um erro ao excluir o projeto.");
-                });
-            }
+        const proximoStatus = etapasKanban[currentIndex + 1];
+        if (proximoStatus) {
+          etapas.push({ nome: proximoStatus, inicio: Date.now(), fim: null });
+          await projetoRef.update({
+            statusAtual: proximoStatus,
+            etapas: etapas
+          });
+          alert(`Projeto avançado para: ${proximoStatus} 👍`);
+        } else {
+          alert("Este projeto já está na última etapa.");
         }
+      }).catch(error => {
+        console.error("Erro ao avançar etapa:", error);
+        alert("Ocorreu um erro ao avançar a etapa do projeto.");
+      });
+    }
 
-        // Função para desenhar o histórico de projetos finalizados em formato de tabela (reescrita)
-        function desenharHistorico() {
-            const historicoContainer = document.getElementById('historicoContainer');
-             // Limpa o container antes de redesenhar
-
-            db.ref('projetos').on('value', (snapshot) => {
-                historicoContainer.innerHTML = '';
-                const projetos = snapshot.val();
-                let projetosFinalizados = [];
-
-                if (projetos) {
-                    Object.keys(projetos).forEach(key => {
-                        const projeto = projetos[key];
-                        if (projeto.statusAtual === 'Finalizado') {
-                            projetosFinalizados.push({ id: key, ...projeto });
-                        }
-                    });
-                }
-
-                //if (projetosFinalizados.length === 0) {
-                 //   const noDataP = document.createElement('p');
-                  //  noDataP.classList.add('no-data');
-                  //  noDataP.textContent = 'Nenhum projeto finalizado ainda.';
-                 //   historicoContainer.appendChild(noDataP);
-                 //   return;
-                //}
-
-                // Cria a tabela
-                const table = document.createElement('table');
-                const thead = document.createElement('thead');
-                const tbody = document.createElement('tbody');
-
-                // Cria o cabeçalho da tabela
-                const headerRow = document.createElement('tr');
-                ['Nome do Projeto', 'Tipo', 'Data de Entrega', 'Hora de Entrega', 'Etapas (Tempo Gasto)', 'Tempo Total', 'Ações'].forEach(text => {
-                    const th = document.createElement('th');
-                    th.textContent = text;
-                    headerRow.appendChild(th);
-                });
-                thead.appendChild(headerRow);
-                table.appendChild(thead);
-
-                // Preenche o corpo da tabela
-                projetosFinalizados.forEach(projeto => {
-                    const row = document.createElement('tr');
-
-                    // Nome do Projeto
-                    const tdNome = document.createElement('td');
-                    tdNome.textContent = projeto.nome;
-                    row.appendChild(tdNome);
-
-                    // Tipo
-                    const tdTipo = document.createElement('td');
-                    tdTipo.textContent = projeto.tipoProjeto;
-                    row.appendChild(tdTipo);
-
-                    // Data de Entrega
-                    const tdData = document.createElement('td');
-                    tdData.textContent = projeto.dataEntrega;
-                    row.appendChild(tdData);
-
-                    // Hora de Entrega
-                    const tdHora = document.createElement('td');
-                    tdHora.textContent = projeto.horaEntrega;
-                    row.appendChild(tdHora);
-
-                    // Etapas (Tempo Gasto)
-                    const tdEtapas = document.createElement('td');
-                    const ulEtapas = document.createElement('ul');
-                    let tempoTotalProjeto = 0;
-
-                    if (projeto.etapas) {
-                        projeto.etapas.forEach((etapa) => {
-                            const inicio = etapa.inicio;
-                            const fim = etapa.fim;
-
-                            let tempoGasto = null;
-                            if (inicio && fim) {
-                                tempoGasto = fim - inicio;
-                                tempoTotalProjeto += tempoGasto;
-                            }
-                            
-                            const li = document.createElement('li');
-                            li.textContent = `${etapa.nome}: ${formatarTempo(tempoGasto)}`;
-                            ulEtapas.appendChild(li);
-                        });
-                    }
-                    tdEtapas.appendChild(ulEtapas);
-                    row.appendChild(tdEtapas);
-
-                    // Tempo Total
-                    const tdTempoTotal = document.createElement('td');
-                    tdTempoTotal.textContent = formatarTempo(tempoTotalProjeto);
-                    row.appendChild(tdTempoTotal);
-
-                    // Ações
-                    const tdAcoes = document.createElement('td');
-                    tdAcoes.classList.add('historico-actions');
-                    
-                    const btnRestaurar = document.createElement('button');
-                    btnRestaurar.textContent = 'Restaurar';
-                    btnRestaurar.style.backgroundColor = '#007bff';
-                    btnRestaurar.onclick = () => restaurarProjeto(projeto.id, etapasKanban[0]);
-                    tdAcoes.appendChild(btnRestaurar);
-
-                    const btnExcluir = document.createElement('button');
-                    btnExcluir.textContent = 'Excluir';
-                    btnExcluir.style.backgroundColor = '#dc3545';
-                    btnExcluir.onclick = () => deletarProjeto(projeto.id);
-                    tdAcoes.appendChild(btnExcluir);
-
-                    row.appendChild(tdAcoes);
-                    tbody.appendChild(row);
-                });
-
-                table.appendChild(tbody);
-                historicoContainer.appendChild(table);
-            });
-        }
-
-        // Variável para armazenar o ID do projeto que está sendo editado no modal
-        let projetoIdEdicao = null;
-
-        // Função para abrir o modal de edição e preencher os campos
-        function abrirModalEdicao(id, nome, data, hora, tipo) {
-            projetoIdEdicao = id; // Armazena o ID do projeto atual
-            document.getElementById('editNome').value = nome;
-            document.getElementById('editData').value = data;
-            document.getElementById('editHora').value = hora;
-            document.getElementById('editTipo').value = tipo;
-            document.getElementById('modalEdicao').style.display = 'block'; // Exibe o modal
-        }
-
-        // Função para salvar as edições do projeto
-        function salvarEdicao() {
-            const id = projetoIdEdicao;
-            const novoNome = document.getElementById('editNome').value.trim();
-            const novaData = document.getElementById('editData').value;
-            const novaHora = document.getElementById('editHora').value;
-            const novoTipo = document.getElementById('editTipo').value;
-
-            if (!novoNome || !novaData || !novaHora || !novoTipo) {
-                alert('Por favor, preencha todos os campos para editar o projeto.');
-                return;
-            }
-
-            db.ref('projetos/' + id).update({
-                nome: novoNome,
-                dataEntrega: novaData,
-                horaEntrega: novaHora,
-                tipoProjeto: novoTipo
-            }).then(() => {
-                alert('Projeto atualizado com sucesso! ✨');
-                document.getElementById('modalEdicao').style.display = 'none'; // Esconde o modal
-            }).catch(error => {
-                console.error("Erro ao salvar edição:", error);
-                alert("Ocorreu um erro ao salvar as edições do projeto.");
-            });
-        }
-
-        // Função para restaurar um projeto do histórico para a primeira etapa do Kanban
-        async function restaurarProjeto(id, primeiraEtapa) {
-            if (confirm('Tem certeza que deseja restaurar este projeto para a primeira etapa do Kanban ("' + primeiraEtapa + '")?')) {
-                await db.ref('projetos/' + id).once('value').then(async snapshot => {
-                    const projeto = snapshot.val();
-                    let etapas = projeto.etapas || [];
-
-                    // Garante que a última etapa (Finalizado) tenha um 'fim' registrado se não tiver
-                    const ultimaEtapa = etapas[etapas.length - 1];
-                    if (ultimaEtapa && ultimaEtapa.nome === 'Finalizado' && ultimaEtapa.fim === null) {
-                        ultimaEtapa.fim = Date.now();
-                    }
-
-                    // Adiciona a nova etapa inicial como a etapa ativa
-                    etapas.push({ nome: primeiraEtapa, inicio: Date.now(), fim: null });
-
-                    return db.ref('projetos/' + id).update({
-                        statusAtual: primeiraEtapa, // Define o status para a primeira etapa
-                        etapas: etapas
-                    });
-                }).then(() => {
-                    alert('Projeto restaurado com sucesso! 🎉 Ele agora está de volta ao quadro Kanban.');
-                }).catch(error => {
-                    console.error("Erro ao restaurar projeto:", error);
-                    alert("Ocorreu um erro ao restaurar o projeto.");
-                });
-            }
-        }
-
-        // Chama as funções de desenho quando a página é completamente carregada
-        document.addEventListener('DOMContentLoaded', () => {
-            desenharKanban();
-            desenharHistorico();
+    function deletarProjeto(id) {
+      if (confirm('Tem certeza que deseja excluir este projeto permanentemente? Essa ação não pode ser desfeita.')) {
+        db.ref('projetos/' + id).remove().then(() => {
+          alert('Projeto excluído com sucesso! 🗑️');
+        }).catch(error => {
+          console.error("Erro ao excluir projeto:", error);
+          alert("Ocorreu um erro ao excluir o projeto.");
         });
-    </script>
+      }
+    }
+
+    function desenharHistorico() {
+      const historicoContainer = document.getElementById('historicoContainer');
+      db.ref('projetos').on('value', (snapshot) => {
+        historicoContainer.innerHTML = '';
+        const projetos = snapshot.val();
+        let projetosFinalizados = [];
+
+        if (projetos) {
+          Object.keys(projetos).forEach(key => {
+            const projeto = projetos[key];
+            if (projeto.statusAtual === 'Finalizado') {
+              projetosFinalizados.push({ id: key, ...projeto });
+            }
+          });
+        }
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        const headerRow = document.createElement('tr');
+        ['Nome do Projeto', 'Tipo', 'Data de Entrega', 'Hora de Entrega', 'Etapas (Tempo Gasto)', 'Tempo Total', 'Ações'].forEach(text => {
+          const th = document.createElement('th');
+          th.textContent = text;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        projetosFinalizados.forEach(projeto => {
+          const row = document.createElement('tr');
+
+          const tdNome = document.createElement('td');
+          tdNome.textContent = projeto.nome;
+          row.appendChild(tdNome);
+
+          const tdTipo = document.createElement('td');
+          tdTipo.textContent = projeto.tipoProjeto;
+          row.appendChild(tdTipo);
+
+          const tdData = document.createElement('td');
+          tdData.textContent = projeto.dataEntrega;
+          row.appendChild(tdData);
+
+          const tdHora = document.createElement('td');
+          tdHora.textContent = projeto.horaEntrega;
+          row.appendChild(tdHora);
+
+          const tdEtapas = document.createElement('td');
+          const ulEtapas = document.createElement('ul');
+          let tempoTotalProjeto = 0;
+
+          if (projeto.etapas) {
+            projeto.etapas.forEach(etapa => {
+              const inicio = etapa.inicio;
+              const fim = etapa.fim;
+              let tempoGasto = null;
+              if (inicio && fim) {
+                tempoGasto = fim - inicio;
+                tempoTotalProjeto += tempoGasto;
+              }
+              const li = document.createElement('li');
+              li.textContent = `${etapa.nome}: ${formatarTempo(tempoGasto)}`;
+              ulEtapas.appendChild(li);
+            });
+          }
+          tdEtapas.appendChild(ulEtapas);
+          row.appendChild(tdEtapas);
+
+          const tdTempoTotal = document.createElement('td');
+          tdTempoTotal.textContent = formatarTempo(tempoTotalProjeto);
+          row.appendChild(tdTempoTotal);
+
+          const tdAcoes = document.createElement('td');
+          tdAcoes.classList.add('historico-actions');
+
+          const btnRestaurar = document.createElement('button');
+          btnRestaurar.textContent = 'Restaurar';
+          btnRestaurar.style.backgroundColor = '#007bff';
+          btnRestaurar.onclick = () => restaurarProjeto(projeto.id, etapasKanban[0]);
+          tdAcoes.appendChild(btnRestaurar);
+
+          const btnExcluir = document.createElement('button');
+          btnExcluir.textContent = 'Excluir';
+          btnExcluir.style.backgroundColor = '#dc3545';
+          btnExcluir.onclick = () => deletarProjeto(projeto.id);
+          tdAcoes.appendChild(btnExcluir);
+
+          row.appendChild(tdAcoes);
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        historicoContainer.appendChild(table);
+      });
+    }
+
+    let projetoIdEdicao = null;
+
+    function abrirModalEdicao(id, nome, data, hora, tipo) {
+      projetoIdEdicao = id;
+      document.getElementById('editNome').value = nome;
+      document.getElementById('editData').value = data;
+      document.getElementById('editHora').value = hora;
+      document.getElementById('editTipo').value = tipo;
+      document.getElementById('modalEdicao').style.display = 'block';
+    }
+
+    function salvarEdicao() {
+      const id = projetoIdEdicao;
+      const novoNome = document.getElementById('editNome').value.trim();
+      const novaData = document.getElementById('editData').value;
+      const novaHora = document.getElementById('editHora').value;
+      const novoTipo = document.getElementById('editTipo').value;
+
+      if (!novoNome || !novaData || !novaHora || !novoTipo) {
+        alert('Por favor, preencha todos os campos para editar o projeto.');
+        return;
+      }
+
+      db.ref('projetos/' + id).update({
+        nome: novoNome,
+        dataEntrega: novaData,
+        horaEntrega: novaHora,
+        tipoProjeto: novoTipo
+      }).then(() => {
+        alert('Projeto atualizado com sucesso! ✨');
+        document.getElementById('modalEdicao').style.display = 'none';
+      }).catch(error => {
+        console.error("Erro ao salvar edição:", error);
+        alert("Ocorreu um erro ao salvar as edições do projeto.");
+      });
+    }
+
+    async function restaurarProjeto(id, primeiraEtapa) {
+      if (confirm('Tem certeza que deseja restaurar este projeto para a primeira etapa do Kanban (\"' + primeiraEtapa + '\")?')) {
+        await db.ref('projetos/' + id).once('value').then(async snapshot => {
+          const projeto = snapshot.val();
+          let etapas = projeto.etapas || [];
+
+          const ultimaEtapa = etapas[etapas.length - 1];
+          if (ultimaEtapa && ultimaEtapa.nome === 'Finalizado' && ultimaEtapa.fim === null) {
+            ultimaEtapa.fim = Date.now();
+          }
+
+          etapas.push({ nome: primeiraEtapa, inicio: Date.now(), fim: null });
+
+          return db.ref('projetos/' + id).update({
+            statusAtual: primeiraEtapa,
+            etapas: etapas
+          });
+        }).then(() => {
+          alert('Projeto restaurado com sucesso! 🎉 Ele agora está de volta ao quadro Kanban.');
+        }).catch(error => {
+          console.error("Erro ao restaurar projeto:", error);
+          alert("Ocorreu um erro ao restaurar o projeto.");
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      desenharKanban();
+      desenharHistorico();
+    });
+  </script>
 </body>
 </html>
