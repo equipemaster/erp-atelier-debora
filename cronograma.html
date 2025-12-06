@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cronograma Semanal - Atelier Débora Freitas</title>
+    <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" />
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background: #fff;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        header h1 {
+            margin: 0;
+            color: #000;
+            font-size: 1.8rem;
+        }
+
+        .voltar-btn {
+            background-color: #000;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Scheduler Panel */
+        .scheduler-panel {
+            width: 100%;
+            max-width: 1200px;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .scheduler-panel h3 {
+            margin: 0 0 10px 0;
+            width: 100%;
+            color: #c7a17a;
+            font-size: 1rem;
+        }
+
+        select,
+        button {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        select {
+            flex: 2;
+            min-width: 200px;
+        }
+
+        button.btn-schedule {
+            flex: 1;
+            background-color: #c7a17a;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        button.btn-schedule:hover {
+            background-color: #b08d68;
+        }
+
+        /* Grid */
+        .schedule-grid {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+
+        .day-column {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-header {
+            background: #000;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .day-date {
+            display: block;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+
+        .day-content {
+            padding: 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-card {
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #eee;
+            border-left: 4px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .task-card.manual-schedule {
+            border-left-color: #c7a17a;
+            background-color: #fffaf0;
+        }
+
+        .remove-schedule {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        .task-card:hover .remove-schedule {
+            display: block;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Cronograma Semanal</h1>
+        <a href="home.html" class="voltar-btn">Voltar</a>
+    </header>
+
+    <!-- Scheduler -->
+    <div class="scheduler-panel">
+        <h3><i class="fas fa-calendar-plus"></i> Agendar Trabalho Manualmente</h3>
+        <select id="selProjeto">
+            <option value="">Carregando projetos...</option>
+        </select>
+        <select id="selDia">
+            <!-- Populated by JS -->
+        </select>
+        <button class="btn-schedule" onclick="agendarProjeto()">📅 Agendar no Dia</button>
+    </div>
+
+    <!-- Grid -->
+    <div class="schedule-grid" id="scheduleGrid"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+            authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+            projectId: "erp-ateliedebora-275e7",
+            storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
+            messagingSenderId: "375960061963",
+            appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+
+        let allProjects = {};
+        let currentWeekDays = [];
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                initPage();
+            }
+        });
+
+        function initPage() {
+            calculateWeekDays();
+            populateDayDropdown();
+            loadProjects();
+        }
+
+        function calculateWeekDays() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0(Sun)-6(Sat)
+            const distToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const monday = new Date(today);
+            monday.setDate(today.getDate() + distToMon);
+            monday.setHours(0, 0, 0, 0);
+
+            const names = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+            currentWeekDays = names.map((name, i) => {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                return {
+                    name,
+                    dateObj: d,
+                    dateStr: d.toISOString().split('T')[0], // YYYY-MM-DD
+                    label: `${name} (${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`
+                };
+            });
+        }
+
+        function populateDayDropdown() {
+            const sel = document.getElementById('selDia');
+            sel.innerHTML = '';
+            currentWeekDays.forEach(day => {
+                const opt = document.createElement('option');
+                opt.value = day.dateStr;
+                opt.text = day.label;
+                sel.appendChild(opt);
+            });
+        }
+
+        function loadProjects() {
+            db.ref('projetos').on('value', snap => {
+                allProjects = snap.val() || {};
+                populateProjectDropdown();
+                renderSchedule();
+            });
+        }
+
+        function populateProjectDropdown() {
+            const sel = document.getElementById('selProjeto');
+            sel.innerHTML = '<option value="">Selecione um Projeto...</option>';
+
+            // Sort by name
+            const sorted = Object.entries(allProjects).sort((a, b) => a[1].nome.localeCompare(b[1].nome));
+
+            sorted.forEach(([id, p]) => {
+                if (p.statusAtual !== 'Finalizado') {
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.text = `${p.nome} (${p.statusAtual})`;
+                    sel.appendChild(opt);
+                }
+            });
+        }
+
+        function agendarProjeto() {
+            const projId = document.getElementById('selProjeto').value;
+            const dateStr = document.getElementById('selDia').value;
+
+            if (!projId || !dateStr) return alert('Selecione projeto e dia!');
+
+            // Save visual schedule date
+            db.ref(`projetos/${projId}/dataAgendada`).set(dateStr).then(() => {
+                alert('Agendado com sucesso!');
+            });
+        }
+
+        function limparAgendamento(id) {
+            if (confirm('Remover do dia agendado? Voltarpa para data original.')) {
+                db.ref(`projetos/${id}/dataAgendada`).remove();
+            }
+        }
+
+        function renderSchedule() {
+            const grid = document.getElementById('scheduleGrid');
+            grid.innerHTML = '';
+
+            // 1. Create Columns
+            currentWeekDays.forEach((day, idx) => {
+                const col = document.createElement('div');
+                col.className = 'day-column';
+                col.innerHTML = `
+                    <div class="day-header">
+                        ${day.name}
+                        <span class="day-date">${day.dateObj.toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <div class="day-content" id="day-col-${day.dateStr}"></div>
+                `;
+                grid.appendChild(col);
+            });
+
+            // 2. Distribute Cards
+            Object.entries(allProjects).forEach(([id, p]) => {
+                if (p.statusAtual === 'Finalizado') return;
+
+                // Priority: Manual Schedule > Delivery Date
+                let targetDate = p.dataAgendada || p.dataEntrega;
+                let isManual = !!p.dataAgendada;
+
+                if (!targetDate) return;
+
+                // Check if targetDate is in this week
+                const d = new Date(targetDate + 'T12:00:00'); // avoid timezone
+                // Check if matches any column
+                const matchDay = currentWeekDays.find(day => day.dateStr === targetDate);
+
+                if (matchDay) {
+                    const container = document.getElementById(`day-col-${matchDay.dateStr}`);
+                    if (container) {
+                        const card = document.createElement('div');
+                        card.className = `task-card ${isManual ? 'manual-schedule' : ''}`;
+                        card.innerHTML = `
+                            ${isManual ? '<i class="fas fa-times remove-schedule" onclick="limparAgendamento(\'' + id + '\')" title="Remover agendamento"></i>' : ''}
+                            <strong>${p.nome}</strong>
+                            <div style="font-size:0.8rem; color:#666; margin-top:5px;">
+                                ${isManual ? '<i class="fas fa-thumbtack" style="color:#c7a17a"></i> Agendado' : '📅 Entrega: ' + p.dataEntrega.split('-').reverse().join('/')}
+                            </div>
+                            <span class="tag">${p.statusAtual}</span>
+                        `;
+                        container.appendChild(card);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

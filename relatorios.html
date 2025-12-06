@@ -1,101 +1,441 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Relatórios - Atelier</title>
+  <title>Relatórios Avançados - Atelier Débora Freitas</title>
+  <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
+
+  <!-- Design System -->
   <link rel="stylesheet" href="css/style.css" />
-   <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous" />
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: #fff;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    header h1 {
+      margin: 0;
+      color: #000;
+      font-size: 1.8rem;
+    }
+
+    .btn-back {
+      background-color: #000;
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .kpi-title {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: #27ae60;
+      margin-top: 5px;
+    }
+
+    /* Charts Area */
+    .charts-row {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .chart-container {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      min-height: 350px;
+    }
+
+    h2 {
+      color: #c7a17a;
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    /* Filters & Table */
+    .filters-container {
+      width: 100%;
+      max-width: 1200px;
+      background: #fdfdfd;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #eee;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input,
+    select,
+    button {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    button.filter-btn {
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      font-weight: bold;
+    }
+
+    button.filter-btn:hover {
+      background: #333;
+    }
+
+    .table-container {
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #eee;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background-color: #c7a17a;
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    tr:hover td {
+      background-color: #fafafa;
+    }
+
+    @media (max-width: 900px) {
+
+      .dashboard-grid,
+      .charts-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
+
   <header>
-    <h1>Relatórios de Transações</h1>
-    <nav>
-            <button onclick="history.back()" style="margin: 10px;">Voltar</button>
-        </nav>
-      
+    <h1>Dashboard de Resultados</h1>
+    <a href="home.html" class="btn-back">Voltar</a>
   </header>
 
-  <main>
-    <section>
-      <h2>Filtrar Transações</h2>
-      <form id="form-filtro">
-        <input type="date" name="inicio" />
-        <input type="date" name="fim" />
-        <select name="tipo">
-          <option value="">Todos os tipos</option>
-          <option value="venda">Venda</option>
-          <option value="aluguel">Aluguel</option>
-        </select>
-        <button type="submit">Filtrar</button>
-      </form>
-    </section>
+  <!-- KPI Cards -->
+  <div class="dashboard-grid">
+    <div class="kpi-card">
+      <div class="kpi-title"><i class="fas fa-coins"></i> Receita Total (Mês)</div>
+      <div class="kpi-value" id="kpiReceita">R$ 0,00</div>
+      <div class="kpi-sub"><i class="fas fa-arrow-up"></i> Atualizado hoje</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><i class="fas fa-shopping-bag"></i> Vendas Realizadas</div>
+      <div class="kpi-value" id="kpiVendas">0</div>
+      <div class="kpi-sub">Peças vendidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><i class="fas fa-calendar-check"></i> Aluguéis Ativos</div>
+      <div class="kpi-value" id="kpiAlugueis">0</div>
+      <div class="kpi-sub">Contratos vigentes</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title"><i class="fas fa-chart-line"></i> Ticket Médio</div>
+      <div class="kpi-value" id="kpiTicket">R$ 0,00</div>
+      <div class="kpi-sub">Por cliente</div>
+    </div>
+  </div>
 
-    <section>
-      <h2>Resultados</h2>
-      <table id="tabela-relatorios">
-        <thead>
-          <tr>
-            <th>Data</th><th>Cliente</th><th>Tipo</th><th>Vestido</th><th>Valor</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-container">
+      <h2>Evolução Financeira (Últimos 6 Meses)</h2>
+      <canvas id="chartFinanceiro"></canvas>
+    </div>
+    <div class="chart-container">
+      <h2>Mix de Produtos (Venda vs Aluguel)</h2>
+      <canvas id="chartMix"></canvas>
+    </div>
+  </div>
 
-  <footer><p>&copy; Atelier Débora</p></footer>
+  <!-- Filters -->
+  <div class="filters-container">
+    <input type="date" id="filtroInicio">
+    <input type="date" id="filtroFim">
+    <select id="filtroTipo">
+      <option value="">Todos os Tipos</option>
+      <option value="Venda">Venda</option>
+      <option value="Aluguel">Aluguel</option>
+    </select>
+    <button class="filter-btn" onclick="aplicarFiltros()"><i class="fas fa-filter"></i> Filtrar</button>
+  </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- Table -->
+  <div class="table-container">
+    <h2>Detalhamento de Transações</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Item / Vestido</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaTransacoes">
+        <!-- JS Populates -->
+      </tbody>
+    </table>
+  </div>
+
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  databaseURL: "https://erp-ateliedebora-275e7-default-rtdb.firebaseio.com",
-  projectId: "erp-ateliedebora-275e7",
+      authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+      projectId: "erp-ateliedebora-275e7",
+      storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
+      messagingSenderId: "375960061963",
+      appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e"
     };
-firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    // Quando logado, então executa o filtro
-    document.getElementById("form-filtro").addEventListener("submit", e => {
-      e.preventDefault();
-      const inicio = e.target.inicio.value ? new Date(e.target.inicio.value) : null;
-      const fim = e.target.fim.value ? new Date(e.target.fim.value) : null;
-      const tipo = e.target.tipo.value;
 
-      let query = db.collection("transacoes").orderBy("timestamp", "desc");
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-      if (tipo) {
-        query = query.where("tipo", "==", tipo);
+    let transacoes = [];
+    let chartFin = null;
+    let chartMix = null;
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location = "index.html";
+      } else {
+        carregarDados();
       }
-
-      query.get().then(snapshot => {
-        const tbody = document.querySelector("#tabela-relatorios tbody");
-        tbody.innerHTML = "";
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          const t = new Date(d.timestamp.seconds * 1000);
-          if (inicio && t < inicio) return;
-          if (fim && t > new Date(fim.getTime() + 24*60*60*1000)) return;
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${d.data}</td>
-            <td>${d.cliente}</td>
-            <td>${d.tipo}</td>
-            <td>${d.item}</td>
-            <td>R$ ${d.valor}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      });
     });
-  } else {
-    alert("Você precisa estar logado para acessar os relatórios.");
-    // Redirecionar para página de login, se tiver
-  }
-});
+
+    function carregarDados() {
+      db.collection("transacoes").orderBy("timestamp", "desc").get().then(snap => {
+        transacoes = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          // Normalize data
+          transacoes.push({
+            id: doc.id,
+            cliente: d.cliente || "Consumidor",
+            tipo: d.tipo || "Venda", // Venda or Aluguel
+            item: d.item || "Vestido",
+            valor: parseFloat(d.valor) || 0,
+            data: d.data, // String YYYY-MM-DD
+            timestamp: d.timestamp ? d.timestamp.toDate() : new Date()
+          });
+        });
+
+        atualizarDashboard(transacoes);
+      });
+    }
+
+    function aplicarFiltros() {
+      const inicio = document.getElementById('filtroInicio').value;
+      const fim = document.getElementById('filtroFim').value;
+      const tipo = document.getElementById('filtroTipo').value;
+
+      let filtrados = transacoes.filter(t => {
+        if (tipo && t.tipo !== tipo) return false;
+        if (inicio && t.data < inicio) return false;
+        if (fim && t.data > fim) return false;
+        return true;
+      });
+
+      atualizarDashboard(filtrados);
+    }
+
+    function atualizarDashboard(dados) {
+      // 1. Calculate KPIs
+      let receita = 0;
+      let vendas = 0;
+      let alugueis = 0;
+
+      dados.forEach(d => {
+        receita += d.valor;
+        if (d.tipo === 'Venda') vendas++;
+        else alugueis++;
+      });
+
+      const ticket = dados.length ? (receita / dados.length) : 0;
+
+      // Update DOM
+      document.getElementById('kpiReceita').textContent = `R$ ${receita.toFixed(2)}`;
+      document.getElementById('kpiVendas').textContent = vendas;
+      document.getElementById('kpiAlugueis').textContent = alugueis;
+      document.getElementById('kpiTicket').textContent = `R$ ${ticket.toFixed(2)}`;
+
+      // 2. Populate Table
+      const tbody = document.getElementById('tabelaTransacoes');
+      tbody.innerHTML = '';
+      dados.slice(0, 50).forEach(t => { // Limit for performance
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+                  <td>${t.data.split('-').reverse().join('/')}</td>
+                  <td>${t.cliente}</td>
+                  <td><span style="font-weight:bold; color:${t.tipo === 'Venda' ? '#27ae60' : '#e67e22'}">${t.tipo}</span></td>
+                  <td>${t.item}</td>
+                  <td>R$ ${t.valor.toFixed(2)}</td>
+              `;
+        tbody.appendChild(tr);
+      });
+
+      // 3. Render Charts
+      renderCharts(dados);
+    }
+
+    function renderCharts(dados) {
+      // Prepare Data
+      // Mix
+      const mixData = [
+        dados.filter(d => d.tipo === 'Venda').length,
+        dados.filter(d => d.tipo === 'Aluguel').length
+      ];
+
+      // Financial Evolution (Grouping by Month - Last 6)
+      // Simplified: Just showing raw data sequence for demo, in real analytics we group by month
+      // Let's Group by Month
+      const months = {};
+      dados.forEach(d => {
+        const key = d.data.substring(0, 7); // YYYY-MM
+        months[key] = (months[key] || 0) + d.valor;
+      });
+
+      const labels = Object.keys(months).sort();
+      const values = labels.map(k => months[k]);
+
+      // Mix Chart
+      const ctxMix = document.getElementById('chartMix').getContext('2d');
+      if (chartMix) chartMix.destroy();
+      chartMix = new Chart(ctxMix, {
+        type: 'doughnut',
+        data: {
+          labels: ['Venda', 'Aluguel'],
+          datasets: [{
+            data: mixData,
+            backgroundColor: ['#27ae60', '#e67e22'],
+            borderWidth: 0
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // Line Chart
+      const ctxFin = document.getElementById('chartFinanceiro').getContext('2d');
+      if (chartFin) chartFin.destroy();
+      chartFin = new Chart(ctxFin, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Receita (R$)',
+            data: values,
+            borderColor: '#c7a17a',
+            backgroundColor: 'rgba(199, 161, 122, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+    }
   </script>
 </body>
-</html>
 
+</html>

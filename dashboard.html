@@ -1,39 +1,195 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-   <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
   <meta charset="UTF-8" />
+  <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Estoque - Ateliê Débora Freitas</title>
+
+  <!-- Design System -->
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <style>
-    .voltar {
-      display: inline-block;
-      margin-top: 2rem;
-      padding: 10px 20px;
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    header h1 {
+      margin: 0;
+      color: #000;
+      font-size: 1.8rem;
+    }
+
+    header button {
+      background-color: #000;
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    header button:hover {
+      background-color: #333;
+      color: #fff;
+    }
+
+    .dashboard-container {
+      width: 100%;
+      max-width: 1000px;
+      background: rgba(255, 255, 255, 0.5);
+      /* Glass effect */
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 400px;
+      width: 100%;
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    /* Custom Legend Styling */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: #000;
+      /* Preto fundo */
+      color: #fff;
+      /* Branco texto */
+      border: 1px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .legend-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      background: #222;
+    }
+
+    .legend-item.active {
+      border-color: #c7a17a;
+      background-color: #c7a17a;
+      /* Gold background when active */
+      color: #000;
+      /* Black text when active for contrast */
+      font-weight: bold;
+    }
+
+    .color-box {
+      width: 12px;
+      height: 12px;
       background: #c7a17a;
+      /* Only indicative color */
+      border-radius: 3px;
+      margin-right: 8px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .voltar {
+      margin-top: 30px;
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      background: #000;
       color: #fff;
       text-decoration: none;
       border-radius: 6px;
+      font-weight: bold;
       transition: background 0.3s;
     }
+
     .voltar:hover {
-      background: #a87b51;
+      background: #333;
     }
   </style>
+</head>
+
+<body>
+  <header>
+    <h1>Dashboard de Estoque</h1>
+    <button onclick="logout()">Sair</button>
+  </header>
+
+  <div class="dashboard-container">
+    <h2 style="margin-top:0; margin-bottom: 20px; font-size: 1.2rem; color: #555;">Visão Geral do Estoque</h2>
+
+    <div class="chart-wrapper">
+      <canvas id="graficoProdutos"></canvas>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h3 style="font-size:1rem; margin:0; color:#666;">Filtrar por Produto:</h3>
+      <button onclick="resetFilter()"
+        style="font-size:0.8rem; padding: 4px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; color:#555;">Limpar
+        Filtro ✖</button>
+    </div>
+    <div id="legendContainer" class="legend-grid">
+      <!-- Items injected by JS -->
+    </div>
+  </div>
+
+  <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+
   <script>
+    // Use DataLabels Plugin
+    Chart.register(ChartDataLabels);
+
     const firebaseConfig = {
-    apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  projectId: "erp-ateliedebora-275e7",
-  storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-  messagingSenderId: "375960061963",
-  appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-  measurementId: "G-ZTCE581F5W"
+      apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+      authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+      projectId: "erp-ateliedebora-275e7",
+      storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
+      messagingSenderId: "375960061963",
+      appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
+      measurementId: "G-ZTCE581F5W"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -42,56 +198,162 @@
     auth.onAuthStateChanged(user => {
       if (!user) window.location = 'index.html';
     });
-  </script>
-</head>
-<body>
-  <header>
-    <h1>Estoque</h1>
-    <button onclick="logout()">Sair</button>
-  </header>
 
-  <main>
-    <section class="grafico">
-      <h2>Estoque de Produtos</h2>
-      <canvas id="graficoProdutos" height="150"></canvas>
-    </section>
-    <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
-  </main>
-
-  <script>
     function logout() {
       auth.signOut();
     }
 
-    db.ref('produtos').once('value').then(snapshot => {
-      const labels = [];
-      const dados = [];
-      snapshot.forEach(p => {
-        const d = p.val();
-        labels.push(d.nome);
-        dados.push(d.estoque);
-      });
+    // Global Chart Data
+    let chartInstance = null;
+    let originalLabels = [];
+    let originalData = [];
+    let currentIndex = -1; // -1 means all
 
-      new Chart(document.getElementById('graficoProdutos'), {
+    db.ref('produtos').once('value').then(snapshot => {
+      if (snapshot.exists()) {
+        snapshot.forEach(p => {
+          const d = p.val();
+          originalLabels.push(d.nome);
+          originalData.push(d.estoque);
+        });
+      }
+      // Initial Render
+      renderChart(originalLabels, originalData);
+      renderLegend();
+    });
+
+    function renderChart(labels, data) {
+      const ctx = document.getElementById('graficoProdutos').getContext('2d');
+
+      // Re-create gradient for this render context
+      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient.addColorStop(0, '#c7a17a');
+      gradient.addColorStop(0.5, '#a87b51');
+      gradient.addColorStop(1, '#6F4E37');
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels,
+          labels: labels,
           datasets: [{
             label: 'Estoque',
-            data: dados,
-            backgroundColor: '#c7a17a'
+            data: data,
+            backgroundColor: gradient,
+            borderRadius: 6,
+            barPercentage: 0.6,
+            categoryPercentage: 0.8
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: {
+              top: 30 // Space for labels
+            }
+          },
+          plugins: {
+            legend: {
+              display: false // Hide default legend
+            },
+            tooltip: {
+              enabled: true // Keep tooltip for hovering
+            },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              color: '#333',
+              font: {
+                weight: 'bold',
+                size: 14,
+                family: "'Outfit', sans-serif"
+              },
+              formatter: function (value) {
+                return value;
+              }
+            }
+          },
           scales: {
             y: {
-              beginAtZero: true
+              beginAtZero: true,
+              grid: {
+                color: '#f0f0f0'
+              },
+              ticks: {
+                font: {
+                  family: "'Outfit', sans-serif"
+                }
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                display: false
+              }
             }
           }
         }
       });
-    });
+    }
+
+    function renderLegend() {
+      const container = document.getElementById('legendContainer');
+      container.innerHTML = '';
+
+      originalLabels.forEach((label, index) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.onclick = () => toggleFilter(index);
+        item.innerHTML = `
+            <div class="color-box"></div>
+            <span>${label}</span>
+        `;
+        // Mark active if needed
+        if (index === currentIndex) item.classList.add('active');
+
+        container.appendChild(item);
+      });
+    }
+
+    function toggleFilter(index) {
+      if (currentIndex === index) {
+        resetFilter();
+      } else {
+        // Select specific
+        currentIndex = index;
+        renderChart([originalLabels[index]], [originalData[index]]);
+        updateLegendUI();
+      }
+    }
+
+    function resetFilter() {
+      currentIndex = -1;
+      renderChart(originalLabels, originalData);
+      updateLegendUI();
+    }
+
+    function updateLegendUI() {
+      const items = document.querySelectorAll('.legend-item');
+      items.forEach((el, idx) => {
+        if (currentIndex !== -1 && idx === currentIndex) {
+          el.classList.add('active');
+          el.style.opacity = '1';
+        } else if (currentIndex === -1) {
+          el.classList.remove('active');
+          el.style.opacity = '1';
+        } else {
+          el.classList.remove('active');
+          el.style.opacity = '0.5';
+        }
+      });
+    }
   </script>
 </body>
+
 </html>

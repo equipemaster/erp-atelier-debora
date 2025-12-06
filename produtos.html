@@ -1,97 +1,172 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastro de Produtos - Ateliê Débora Freitas</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/gestao.css" />
+
   <style>
+    /* Specific overrides for Produtos page matching Projetos design */
     body {
-      font-family: 'Playfair Display', serif;
-      background-color: #0d2d0e;
-      color: #fff;
+      height: auto !important;
+      overflow-y: auto !important;
+      display: block !important;
       padding: 2rem;
     }
-    h1 {
-      text-align: center;
-      color: #c7a17a;
-    }
-    input, select, textarea, button {
-  margin: 0.5rem;
-  padding: 0.6rem;
-  border-radius: 4px;
-  border: none;
-  display: inline-block;
-  vertical-align: top; /* <-- Adicionado para alinhamento */
-}
 
-    input[type="file"] {
-      padding: 0.3rem;
+    .cadastro-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .cadastro-form input,
+    .cadastro-form select,
+    .cadastro-form textarea {
+      width: auto;
+      flex-grow: 1;
+      min-width: 200px;
+      margin: 0;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    .cadastro-form textarea {
+      height: 45px;
+      /* Compact height matching inputs roughly */
+      resize: vertical;
+    }
+
+    .cadastro-form button {
+      width: auto;
+      margin: 0;
+      padding: 10px 20px;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Filter Section */
+    .filtros {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: space-between;
+    }
+
+    .filtros input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      flex: 1;
+    }
+
+    .acoes {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .acoes button {
       background: #fff;
       color: #333;
-    }
-    input, select, textarea {
-      width: 200px;
-    }
-    textarea {
-      height: 80px;
-    }
-    button {
-      background-color: #c7a17a;
-      color: white;
+      border: 1px solid #ccc;
+      padding: 8px 15px;
+      border-radius: 6px;
       cursor: pointer;
+      font-size: 0.9rem;
     }
-    button:hover {
-      background-color: #a87b51;
+
+    .acoes button:hover {
+      background: #f0f0f0;
     }
+
+    /* Modern Table Styles */
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: #fff;
+      background: #fff;
       color: #333;
       border-radius: 8px;
       overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
     }
-    th, td {
-      padding: 12px 16px;
-      border-bottom: 1px solid #ccc;
+
+    th {
+      background: #000;
+      color: #fff;
+      padding: 12px;
+      text-transform: uppercase;
+      font-size: 0.85rem;
       text-align: left;
     }
-    th {
-      background-color: #c7a17a;
-      color: white;
+
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 12px;
+      vertical-align: middle;
     }
+
     tr:hover {
-      background-color: #f5f5f5;
+      background: rgba(0, 0, 0, 0.05);
     }
-    .voltar {
-      margin-top: 2rem;
-      display: inline-block;
-      padding: 10px 20px;
-      background: #c7a17a;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 6px;
-      transition: background 0.3s;
+
+    /* Action Buttons in Table */
+    td button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      margin-right: 5px;
+      color: #666;
+      transition: color 0.2s;
     }
-    .voltar:hover {
-      background: #a87b51;
+
+    td button:hover {
+      color: #000;
     }
-    .filtros, .paginacao, .acoes {
-      margin: 1rem 0;
-    }
+
+    /* Pagination */
     .paginacao button {
-      margin: 0 4px;
-      background: #c7a17a;
+      padding: 5px 10px;
+      margin: 0 2px;
+      border: 1px solid #ddd;
+      background: #fff;
+      cursor: pointer;
+      border-radius: 4px;
     }
-    .acoes button i {
-      margin-right: 6px;
+
+    .paginacao button:hover {
+      background: #eee;
     }
+
+    /* Modal */
     .modal {
       display: none;
       position: fixed;
@@ -102,49 +177,45 @@
       height: 100%;
       overflow: auto;
       background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
     }
+
     .modal-content {
       background-color: #fff;
       color: #333;
       margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      border-radius: 10px;
-      width: 80%;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
       max-width: 400px;
       text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
+
     .modal-content button {
       margin: 10px;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 6px;
+      border: none;
     }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      thead tr {
-        display: none;
-      }
-      td {
-        position: relative;
-        padding-left: 50%;
-      }
-      td::before {
-        position: absolute;
-        top: 12px;
-        left: 16px;
-        white-space: nowrap;
-        font-weight: bold;
-        color: #555;
-      }
-      td:nth-of-type(1)::before { content: "Produto"; }
-      td:nth-of-type(2)::before { content: "Estoque"; }
-      td:nth-of-type(3)::before { content: "Ações"; }
+
+    .modal-content button:first-of-type {
+      background: #dc3545;
+      color: white;
+    }
+
+    .modal-content button:last-of-type {
+      background: #ccc;
+      color: #333;
     }
   </style>
 </head>
+
 <body>
   <h1>Cadastro de Produtos</h1>
-  <div class="form-container">
+
+  <div class="cadastro-form">
     <input id="nomeProduto" placeholder="Nome do produto">
     <input type="number" id="estoqueProduto" placeholder="Quantidade">
     <select id="unidadeProduto">
@@ -157,14 +228,15 @@
     <button onclick="cadastrarProduto()"><i class="fas fa-plus"></i> Cadastrar</button>
   </div>
 
-  <div class="filtros">
-    <input type="text" id="filtroNome" placeholder="Pesquisar por nome...">
-    <input type="number" id="filtroEstoque" placeholder="Filtrar por estoque...">
-  </div>
-
-  <div class="acoes">
-    <button onclick="exportarCSV()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
-    <button onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div class="filtros" style="flex: 1; margin: 0; margin-right: 15px;">
+      <input type="text" id="filtroNome" placeholder="Pesquisar por nome...">
+      <input type="number" id="filtroEstoque" placeholder="Filtrar por estoque...">
+    </div>
+    <div class="acoes" style="margin: 0;">
+      <button onclick="exportarCSV()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+      <button onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+    </div>
   </div>
 
   <table>
@@ -178,167 +250,170 @@
     <tbody id="tbody-produtos"></tbody>
   </table>
 
-  <div class="paginacao" id="paginacao"></div>
+  <div class="paginacao" id="paginacao" style="text-align: center; margin-top: 10px;"></div>
 
   <div class="modal" id="modal-confirmacao">
     <div class="modal-content">
       <p>Tem certeza que deseja excluir este produto?</p>
-      <button onclick="confirmarExclusao()">Sim</button>
+      <button onclick="confirmarExclusao()">Sim, Excluir</button>
       <button onclick="fecharModal()">Cancelar</button>
     </div>
   </div>
 
-  <div style="text-align:center">
-    <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+  <div style="text-align:center; margin-top: 30px;">
+    <a href="home.html" class="voltar"
+      style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">⬅
+      Voltar ao Menu</a>
   </div>
 
   <script>
-  const firebaseConfig = {
-   apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  projectId: "erp-ateliedebora-275e7",
-  storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-  messagingSenderId: "375960061963",
-  appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-  measurementId: "G-ZTCE581F5W"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
-  const storage = firebase.storage();
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+      authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+      projectId: "erp-ateliedebora-275e7",
+      storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
+      messagingSenderId: "375960061963",
+      appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
+      measurementId: "G-ZTCE581F5W"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const storage = firebase.storage();
 
-  let produtosCarregados = [];
-  let paginaAtual = 1;
-  const itensPorPagina = 5;
-  let idParaExcluir = null;
+    let produtosCarregados = [];
+    let paginaAtual = 1;
+    const itensPorPagina = 5;
+    let idParaExcluir = null;
 
-  auth.onAuthStateChanged(user => {
-    if (!user) window.location = 'index.html';
-  });
-
-  function cadastrarProduto() {
-    const nome = document.getElementById('nomeProduto').value.trim();
-    const estoque = parseInt(document.getElementById('estoqueProduto').value);
-    const unidade = document.getElementById('unidadeProduto').value;
-    const categoria = document.getElementById('categoriaProduto').value.trim();
-    const descricao = document.getElementById('descricaoProduto').value.trim();
-    const file = document.getElementById('imagemProduto').files[0];
-
-    if (!nome || isNaN(estoque) || !categoria) return alert('Preencha todos os campos!');
-
-    const id = db.ref('produtos').push().key;
-    const produtoData = { id, nome, estoque, unidade, categoria, descricao, imagemURL: '' };
-
-    if (file) {
-      const storageRef = storage.ref(`produtos/${id}/${file.name}`);
-      storageRef.put(file).then(snapshot =>
-        snapshot.ref.getDownloadURL().then(url => {
-          produtoData.imagemURL = url;
-          salvarProduto(id, produtoData);
-        })
-      );
-    } else {
-      salvarProduto(id, produtoData);
-    }
-  }
-
-  function salvarProduto(id, data) {
-    db.ref('produtos/' + id).set(data).then(() => {
-      alert('Produto cadastrado com sucesso!');
-      document.querySelectorAll('#nomeProduto, #estoqueProduto, #categoriaProduto, #descricaoProduto').forEach(el => el.value = '');
-      document.getElementById('imagemProduto').value = '';
-      carregarProdutos();
+    auth.onAuthStateChanged(user => {
+      if (!user) window.location = 'index.html';
     });
-  }
 
-  function abrirModal(id) {
-    idParaExcluir = id;
-    document.getElementById('modal-confirmacao').style.display = 'block';
-  }
+    function cadastrarProduto() {
+      const nome = document.getElementById('nomeProduto').value.trim();
+      const estoque = parseInt(document.getElementById('estoqueProduto').value);
+      const unidade = document.getElementById('unidadeProduto').value;
+      const categoria = document.getElementById('categoriaProduto').value.trim();
+      const descricao = document.getElementById('descricaoProduto').value.trim();
+      const file = document.getElementById('imagemProduto').files[0];
 
-  function fecharModal() {
-    idParaExcluir = null;
-    document.getElementById('modal-confirmacao').style.display = 'none';
-  }
+      if (!nome || isNaN(estoque) || !categoria) return alert('Preencha todos os campos!');
 
-  function confirmarExclusao() {
-    if (idParaExcluir) {
-      db.ref('produtos/' + idParaExcluir).remove();
-      fecharModal();
-      carregarProdutos();
+      const id = db.ref('produtos').push().key;
+      const produtoData = { id, nome, estoque, unidade, categoria, descricao, imagemURL: '' };
+
+      if (file) {
+        const storageRef = storage.ref(`produtos/${id}/${file.name}`);
+        storageRef.put(file).then(snapshot =>
+          snapshot.ref.getDownloadURL().then(url => {
+            produtoData.imagemURL = url;
+            salvarProduto(id, produtoData);
+          })
+        );
+      } else {
+        salvarProduto(id, produtoData);
+      }
     }
-  }
 
-  function carregarProdutos() {
-    db.ref('produtos').once('value').then(s => {
-      produtosCarregados = [];
-      s.forEach(p => {
-        produtosCarregados.push(p.val());
+    function salvarProduto(id, data) {
+      db.ref('produtos/' + id).set(data).then(() => {
+        alert('Produto cadastrado com sucesso!');
+        document.querySelectorAll('#nomeProduto, #estoqueProduto, #categoriaProduto, #descricaoProduto').forEach(el => el.value = '');
+        document.getElementById('imagemProduto').value = '';
+        carregarProdutos();
       });
-      aplicarFiltros();
-    });
-  }
-
-  function aplicarFiltros() {
-    const filtroNome = document.getElementById('filtroNome').value.toLowerCase();
-    const filtroEstoque = document.getElementById('filtroEstoque').value;
-    const produtosFiltrados = produtosCarregados.filter(p => {
-      const matchNome = p.nome.toLowerCase().includes(filtroNome);
-      const matchEstoque = !filtroEstoque || p.estoque == filtroEstoque;
-      return matchNome && matchEstoque;
-    });
-    exibirPaginacao(produtosFiltrados);
-  }
-
-  function exibirPaginacao(lista) {
-    const inicio = (paginaAtual - 1) * itensPorPagina;
-    const fim = inicio + itensPorPagina;
-    const pagina = lista.slice(inicio, fim);
-    const tbody = document.getElementById('tbody-produtos');
-    tbody.innerHTML = '';
-    pagina.forEach(p => {
-      tbody.innerHTML += `
-        <tr>
-          <td><img src="${p.imagemURL || 'placeholder.png'}" alt="${p.nome}" width="50" style="vertical-align:middle; margin-right:8px;">${p.nome}<br><small>${p.categoria}</small></td>
-          <td>${p.estoque} ${p.unidade}</td>
-          <td>
-            <button onclick="editarProduto('${p.id}')"><i class="fas fa-edit"></i></button>
-            <button onclick="abrirModal('${p.id}')"><i class="fas fa-trash"></i></button>
-          </td>
-        </tr>`;
-    });
-    const totalPaginas = Math.ceil(lista.length / itensPorPagina);
-    const paginacaoDiv = document.getElementById('paginacao');
-    paginacaoDiv.innerHTML = '';
-    for (let i = 1; i <= totalPaginas; i++) {
-      paginacaoDiv.innerHTML += `<button onclick="mudarPagina(${i})">${i}</button>`;
     }
-  }
 
-  function mudarPagina(p) {
-    paginaAtual = p;
-    aplicarFiltros();
-  }
+    function abrirModal(id) {
+      idParaExcluir = id;
+      document.getElementById('modal-confirmacao').style.display = 'block';
+    }
 
-  function exportarCSV() {
-    let csv = 'Produto,Estoque,Unidade,Categoria,Descrição\n';
-    produtosCarregados.forEach(p => {
-      csv += `${p.nome},${p.estoque},${p.unidade},${p.categoria},${p.descricao}\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'produtos.csv');
-    a.click();
-  }
+    function fecharModal() {
+      idParaExcluir = null;
+      document.getElementById('modal-confirmacao').style.display = 'none';
+    }
 
-  window.onload = () => {
-    carregarProdutos();
-    document.getElementById('filtroNome').addEventListener('input', aplicarFiltros);
-    document.getElementById('filtroEstoque').addEventListener('input', aplicarFiltros);
-  };
-</script>
+    function confirmarExclusao() {
+      if (idParaExcluir) {
+        db.ref('produtos/' + idParaExcluir).remove();
+        fecharModal();
+        carregarProdutos();
+      }
+    }
+
+    function carregarProdutos() {
+      db.ref('produtos').once('value').then(s => {
+        produtosCarregados = [];
+        s.forEach(p => {
+          produtosCarregados.push(p.val());
+        });
+        aplicarFiltros();
+      });
+    }
+
+    function aplicarFiltros() {
+      const filtroNome = document.getElementById('filtroNome').value.toLowerCase();
+      const filtroEstoque = document.getElementById('filtroEstoque').value;
+      const produtosFiltrados = produtosCarregados.filter(p => {
+        const matchNome = p.nome.toLowerCase().includes(filtroNome);
+        const matchEstoque = !filtroEstoque || p.estoque == filtroEstoque;
+        return matchNome && matchEstoque;
+      });
+      exibirPaginacao(produtosFiltrados);
+    }
+
+    function exibirPaginacao(lista) {
+      const inicio = (paginaAtual - 1) * itensPorPagina;
+      const fim = inicio + itensPorPagina;
+      const pagina = lista.slice(inicio, fim);
+      const tbody = document.getElementById('tbody-produtos');
+      tbody.innerHTML = '';
+      pagina.forEach(p => {
+        tbody.innerHTML += `
+            <tr>
+              <td><strong>${p.nome}</strong><br><small style="color:#666">${p.categoria}</small></td>
+              <td>${p.estoque} ${p.unidade}</td>
+              <td>
+                <button onclick="editarProduto('${p.id}')" title="Editar"><i class="fas fa-edit"></i></button>
+                <button onclick="abrirModal('${p.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+              </td>
+            </tr>`;
+      });
+      const totalPaginas = Math.ceil(lista.length / itensPorPagina);
+      const paginacaoDiv = document.getElementById('paginacao');
+      paginacaoDiv.innerHTML = '';
+      for (let i = 1; i <= totalPaginas; i++) {
+        paginacaoDiv.innerHTML += `<button onclick="mudarPagina(${i})">${i}</button>`;
+      }
+    }
+
+    function mudarPagina(p) {
+      paginaAtual = p;
+      aplicarFiltros();
+    }
+
+    function exportarCSV() {
+      let csv = 'Produto,Estoque,Unidade,Categoria,Descrição\n';
+      produtosCarregados.forEach(p => {
+        csv += `${p.nome},${p.estoque},${p.unidade},${p.categoria},${p.descricao}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'produtos.csv');
+      a.click();
+    }
+
+    window.onload = () => {
+      carregarProdutos();
+      document.getElementById('filtroNome').addEventListener('input', aplicarFiltros);
+      document.getElementById('filtroEstoque').addEventListener('input', aplicarFiltros);
+    };
+  </script>
 
 </body>
+
 </html>

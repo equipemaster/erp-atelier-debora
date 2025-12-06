@@ -1,847 +1,636 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestão de Vestidos - Atelier Débora Freitas</title>
-  <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
-     <link rel="icon" href="favicon-16x16.png" type="favicon-16x16.png">
+    <title>Gestão de Vendas - Atelier Débora Freitas</title>
+    <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
     <style>
-        /* Basic Reset & Body Styles */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
             padding: 20px;
-            background-color: #0d2d0e; /* Light gray background */
-            color: #333;
-            line-height: 1.6;
+            background: #fff;
         }
 
         header {
-            background-color: #0d2d0e; /* Amethyst purple */
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
         }
 
         header h1 {
             margin: 0;
-            font-size: 2.2em;
-            letter-spacing: 0.05em;
+            color: #000;
+            font-size: 1.8rem;
         }
 
-        nav button {
-            background-color: #9370DB; /* Medium purple */
-            color: white;
+        .voltar-btn {
+            background-color: #000;
+            color: #fff;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 8px 20px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-            margin-top: 10px;
+            transition: all 0.2s;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
         }
 
-        nav button:hover {
-            background-color: #7B68EE; /* Darker medium purple on hover */
+        .voltar-btn:hover {
+            background-color: #333;
         }
 
-        main {
-            max-width: 960px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
         }
 
-        section {
-            margin-bottom: 35px;
+        .section-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
         h2 {
-            color: #6A0DAD; /* Darker purple for headings */
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 12px;
-            margin-bottom: 25px;
-            font-size: 1.8em;
+            color: #c7a17a;
+            /* Gold title */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
         }
 
-        /* Card Section Styling */
-        .card-section {
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background-color: #fafafa;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
+        /* Forms */
         form {
             display: grid;
-            gap: 18px;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Responsive grid for forms */
+            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
 
-        form input[type="text"],
-        form input[type="number"],
-        form input[type="tel"],
-        form input[type="date"],
-        form select {
+        input,
+        select {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 1em;
+            font-family: 'Outfit', sans-serif;
+            background: #fff;
         }
 
-        form button[type="submit"] {
-            background-color: #4CAF50; /* Green for submit actions */
+        input:focus,
+        select:focus {
+            border-color: #c7a17a;
+            outline: none;
+        }
+
+        button.action-btn {
+            background-color: #000;
             color: white;
             border: none;
-            padding: 12px 25px;
+            padding: 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1.1em;
-            grid-column: 1 / -1; /* Make button span all columns */
-            transition: background-color 0.3s ease;
+            font-weight: bold;
+            transition: background 0.3s;
+            grid-column: 1 / -1;
         }
 
-        form button[type="submit"]:hover {
-            background-color: #45a049;
+        button.action-btn:hover {
+            background-color: #333;
         }
 
-        hr {
-            border: 0;
-            height: 1px;
-            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0));
-            margin: 45px 0;
-        }
-
-        /* Data List Styling */
-        .data-list {
-            max-height: 350px;
+        /* Inventory Grid */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            max-height: 400px;
             overflow-y: auto;
-            border: 1px solid #ddd;
+            padding-right: 5px;
+        }
+
+        .vestido-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
             padding: 15px;
-            margin-top: 15px;
-            background-color: #fff;
-            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
         }
 
-        .vestido-card, .historico-card {
-            background-color: #E6E6FA; /* Light Lavender */
-            border: 1px solid #D8BFD8; /* Thistle border */
-            padding: 12px 18px;
-            margin-bottom: 10px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .vestido-card:last-child, .historico-card:last-child {
-            margin-bottom: 0;
-        }
-
-        .vestido-card p, .historico-card p {
-            margin: 5px 0;
-            flex-grow: 1;
-            color: #444;
+        .vestido-card:hover {
+            transform: translateY(-2px);
+            border-color: #c7a17a;
         }
 
         .vestido-card strong {
-            color: #6A0DAD; /* Dark purple */
+            display: block;
+            color: #000;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
         }
 
-        .vestido-card button {
-            background-color: #dc3545; /* Red for delete */
+        .vestido-card small {
+            color: #666;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.9em;
-            margin-left: 15px;
-            transition: background-color 0.3s ease;
+            font-size: 0.8rem;
+            float: right;
         }
 
-        .vestido-card button:hover {
-            background-color: #c82333;
+        /* History List */
+        .historico-list {
+            max-height: 500px;
+            overflow-y: auto;
         }
 
-        /* Message Styling */
-        .success-message {
-            color: #28a745; /* Green */
-            font-weight: bold;
-            margin-top: 15px;
-            text-align: center;
-            grid-column: 1 / -1;
-            padding: 10px;
-            background-color: #e6ffed;
-            border: 1px solid #d4edda;
-            border-radius: 5px;
-        }
-
-        .error-message {
-            color: #dc3545; /* Red */
-            font-weight: bold;
-            margin-top: 15px;
-            text-align: center;
-            grid-column: 1 / -1;
-            padding: 10px;
-            background-color: #ffe6e6;
-            border: 1px solid #f5c6cb;
-            border-radius: 5px;
-        }
-
-        .loading-message {
-            color: #6c757d; /* Gray */
-            text-align: center;
-            padding: 25px;
-            font-style: italic;
-        }
-
-        /* Filter Section Styling */
-        .filters-container {
+        .historico-item {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 15px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
+            justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background-color: #fcfcfc;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .filters-container label {
+        .historico-item:last-child {
+            border-bottom: none;
+        }
+
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
             font-weight: bold;
-            color: #555;
-            white-space: nowrap; /* Prevent label from wrapping */
+            text-transform: uppercase;
         }
 
-        .filters-container input[type="text"],
-        .filters-container input[type="date"],
-        .filters-container select {
+        .tag.venda {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .tag.aluguel {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Messages */
+        .success-msg,
+        .error-msg {
+            grid-column: 1 / -1;
             padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            flex-grow: 1;
-            min-width: 120px;
-        }
-
-        .filters-container button {
-            background-color: #007bff; /* Blue for export */
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .filters-container button:hover {
-            background-color: #0056b3;
-        }
-
-        footer {
+            border-radius: 6px;
             text-align: center;
-            margin-top: 40px;
-            padding: 20px;
-            color: #777;
-            font-size: 0.9em;
-            border-top: 1px solid #eee;
-            background-color: #f8f9fa;
-            border-radius: 0 0 8px 8px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
         }
 
-        /* Ajuste Responsivo*/
-        @media (max-width: 768px) {
-            main {
-                padding: 20px;
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Responsive */
+        @media (min-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr 1fr;
             }
-            form {
-                grid-template-columns: 1fr; 
-            }
-            .filters-container {
-                flex-direction: column; 
-                align-items: stretch;
+
+            .full-width {
+                grid-column: 1 / -1;
             }
         }
     </style>
 </head>
+
 <body>
+
     <header>
-        <h1>Gestão de Vestidos - Atelier Débora Freitas</h1>
-        <nav>
-            <button onclick="history.back()" style="margin: 10px;">Voltar</button>
-        </nav>
+        <h1>Gestão de Vendas & Locação</h1>
+        <a href="home.html" class="voltar-btn">Voltar</a>
     </header>
 
-    <main>
-        <section class="card-section">
-            <h2>Cadastrar Novo Vestido</h2>
-            <form id="form-cadastro">
-                <input type="text" name="nome" placeholder="Nome do Vestido" required aria-label="Nome do Vestido" />
-                <input type="text" name="codigo" placeholder="Código" required aria-label="Código do Vestido" />
-                <input type="number" name="valorVenda" placeholder="Valor de Venda (R$)" required min="0" step="0.01" aria-label="Valor de Venda" />
-                <input type="number" name="valorAluguel" placeholder="Valor de Aluguel (R$)" required min="0" step="0.01" aria-label="Valor de Aluguel" />
-                <button type="submit">Cadastrar Vestido</button>
-                <p id="msg-cadastro-sucesso" class="success-message" style="display: none;">Vestido cadastrado com sucesso!</p>
-                <p id="msg-cadastro-erro" class="error-message" style="display: none;">Erro ao cadastrar vestido. Tente novamente.</p>
-            </form>
-        </section>
+    <main class="main-container">
 
-        <hr />
+        <!-- Column 1: Actions -->
+        <div>
+            <!-- Register Sale/Rent -->
+            <section class="section-card" style="margin-bottom: 30px;">
+                <h2>Registrar Transação</h2>
+                <form id="form-venda">
+                    <input type="text" name="cliente" placeholder="Nome do Cliente" required />
+                    <input type="text" name="cpf" placeholder="CPF (000.000.000-00)" />
+                    <input type="tel" name="telefone" placeholder="Telefone" />
 
-        <section class="card-section">
-            <h2>Vestidos Disponíveis</h2>
-            <div id="lista-disponiveis" class="data-list">
-                <p id="loading-disponiveis" class="loading-message">Carregando vestidos disponíveis...</p>
-                </div>
-        </section>
-
-        <hr />
-
-         <section class="card-section">
-    <h2>Registrar Venda ou Aluguel</h2>
-    <form id="form-venda">
-      <input type="text" name="cliente" placeholder="Nome do Cliente" required aria-label="Nome do Cliente" />
-      <input type="text" name="cpf" placeholder="CPF" pattern="\d{3}\.?\d{3}\.?\d{3}-?\d{2}" title="Formato: 123.456.789-00" aria-label="CPF do Cliente" />
-      <input type="tel" name="telefone" placeholder="Telefone" pattern="^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$" title="Formato: (XX) XXXX-XXXX ou (XX) XXXXX-XXXX" aria-label="Telefone do Cliente" />
-       <input type="cep" name="Cep" placeholder="Cep" pattern="^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$" title="Formato: 74984-620 aria-label="CEP" />
-      <select name="vestido" required aria-label="Selecione o Vestido">
-        <option value="">Selecione o Vestido</option>
-      </select>
-      <select name="tipo" aria-label="Tipo de Transação">
-        <option value="venda">Venda</option>
-        <option value="aluguel">Aluguel</option>
-      </select>
-      <select name="formaPagamento" required aria-label="Forma de Pagamento">
-        <option value="">Forma de Pagamento</option>
-        <option value="cartao_credito">Cartão de Crédito</option>
-        <option value="cartao_debito">Cartão de Débito</option>
-        <option value="boleto">Boleto</option>
-        </select>
-        <select name="parcelas" id="parcelas" style="display: none;">
-  <option value="">Escolha as parcelas</option>
-</select>
-
-    </select>
-
-      </select>
-      <input type="number" name="valor" placeholder="Valor (R$)" required min="0" step="0.01" aria-label="Valor da Transação" />
-      <button type="submit">Finalizar Transação</button>
-      <p id="mensagem-sucesso" class="success-message" style="display: none;">Transação registrada com sucesso!</p>
-      <p id="mensagem-erro-venda" class="error-message" style="display: none;">Erro ao registrar transação. Tente novamente.</p>
-    </form>
-  </section>
-
-        <hr />
-
-        <section class="card-section">
-            <h2>Devolução de Vestido Alugado</h2>
-            <form id="form-devolucao">
-                <select name="vestidoAlugado" required aria-label="Selecionar vestido alugado para devolução">
-                    <option value="">Selecionar vestido alugado</option>
+                    <select name="vestido" required id="select-vestido-venda">
+                        <option value="">Selecione o Vestido</option>
                     </select>
-                <button type="submit">Registrar Devolução</button>
-                <p id="msg-devolucao-sucesso" class="success-message" style="display:none;">Devolução registrada com sucesso!</p>
-                <p id="msg-devolucao-erro" class="error-message" style="display:none;">Erro ao registrar devolução. Tente novamente.</p>
-            </form>
-        </section>
 
-        <hr />
+                    <select name="tipo" required>
+                        <option value="venda">Venda</option>
+                        <option value="aluguel">Aluguel</option>
+                    </select>
 
-        <section class="card-section">
-            <h2>Histórico de Vendas e Locação</h2>
-            <div id="filtros-historico" class="filters-container">
-                <label for="filtro-tipo">Tipo:</label>
-                <select id="filtro-tipo" aria-label="Filtrar por tipo de transação">
-                    <option value="">Todos</option>
-                    <option value="venda">Venda</option>
-                    <option value="aluguel">Aluguel</option>
-                </select>
+                    <select name="formaPagamento" required>
+                        <option value="">Forma de Pagamento</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="dinheiro">Dinheiro/Pix</option>
+                        <option value="boleto">Boleto</option>
+                    </select>
 
-                <label for="filtro-cliente">Cliente:</label>
-                <input type="text" id="filtro-cliente" placeholder="Nome do cliente" aria-label="Filtrar por nome do cliente" />
+                    <select name="parcelas" id="parcelas" style="display: none;">
+                        <option value="">Parcelas</option>
+                        <!-- Items injected by JS -->
+                    </select>
 
-                <label for="filtro-data-inicio">De:</label>
-                <input type="date" id="filtro-data-inicio" aria-label="Filtrar por data de início" />
+                    <input type="number" name="valor" placeholder="Valor (R$)" required min="0" step="0.01" />
 
-                <label for="filtro-data-fim">Até:</label>
-                <input type="date" id="filtro-data-fim" aria-label="Filtrar por data de fim" />
+                    <button type="submit" class="action-btn">Finalizar Transação</button>
+                    <div id="msg-venda-sucesso" class="success-msg">Transação registrada!</div>
+                    <div id="msg-venda-erro" class="error-msg">Erro ao registrar.</div>
+                </form>
+            </section>
 
-                <button id="btn-exportar">Exportar CSV</button>
-            </div>
+            <!-- Register New Dress -->
+            <section class="section-card">
+                <h2>Cadastrar Novo Vestido</h2>
+                <form id="form-cadastro">
+                    <input type="text" name="nome" placeholder="Nome do Modelo" required />
+                    <input type="text" name="codigo" placeholder="Código" required />
+                    <input type="number" name="valorVenda" placeholder="Venda (R$)" required step="0.01" />
+                    <input type="number" name="valorAluguel" placeholder="Aluguel (R$)" required step="0.01" />
+                    <button type="submit" class="action-btn">Cadastrar Item</button>
+                    <div id="msg-cadastro-sucesso" class="success-msg">Vestido cadastrado!</div>
+                    <div id="msg-cadastro-erro" class="error-msg">Erro ao cadastrar.</div>
+                </form>
+            </section>
+        </div>
 
-            <div id="historico-vendas-locacao" class="data-list">
-                <p id="loading-historico" class="loading-message">Carregando histórico...</p>
+        <!-- Column 2: Inventory & Returns -->
+        <div>
+            <!-- Return Dress -->
+            <section class="section-card" style="margin-bottom: 30px;">
+                <h2>Devolução de Aluguel</h2>
+                <form id="form-devolucao">
+                    <select name="vestidoAlugado" required id="select-vestido-devolucao">
+                        <option value="">Selecione o vestido alugado</option>
+                    </select>
+                    <button type="submit" class="action-btn" style="background-color: #555;">Registrar
+                        Devolução</button>
+                    <div id="msg-devolucao-sucesso" class="success-msg">Devolução confirmada!</div>
+                </form>
+            </section>
+
+            <!-- Active Inventory -->
+            <section class="section-card">
+                <h2>Vestidos Disponíveis</h2>
+                <div class="inventory-grid" id="lista-disponiveis">
+                    <p style="color:#666; text-align:center;">Carregando...</p>
                 </div>
-        </section>
+            </section>
+        </div>
+
+        <!-- Full Width: History -->
+        <div class="full-width">
+            <section class="section-card">
+                <h2>Histórico Financeiro</h2>
+
+                <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+                    <select id="filtro-tipo" style="max-width: 150px;">
+                        <option value="">Todos Tipos</option>
+                        <option value="venda">Venda</option>
+                        <option value="aluguel">Aluguel</option>
+                    </select>
+                    <input type="text" id="filtro-cliente" placeholder="Filtrar por Cliente" style="flex:1;" />
+                    <input type="date" id="filtro-data-inicio" style="max-width: 150px;" />
+                    <input type="date" id="filtro-data-fim" style="max-width: 150px;" />
+                    <button id="btn-exportar" class="action-btn" style="width: auto; margin:0;">Exportar CSV</button>
+                </div>
+
+                <div id="historico-list" class="historico-list">
+                    <!-- History items -->
+                </div>
+            </section>
+        </div>
+
     </main>
 
-    <footer>
-        <p>&copy; Atelier Débora Freitas</p>
-    </footer>
-
-  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
-
     <script>
+        // Firebase Config
         const firebaseConfig = {
-    apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  databaseURL: "https://erp-ateliedebora-275e7-default-rtdb.firebaseio.com",
-  projectId: "erp-ateliedebora-275e7",
-  storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-  messagingSenderId: "375960061963",
-  appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-  measurementId: "G-ZTCE581F5W"
+            apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
+            authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
+            projectId: "erp-ateliedebora-275e7",
+            storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
+            messagingSenderId: "375960061963",
+            appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
+            measurementId: "G-ZTCE581F5W"
         };
-       const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); 
-         const auth = firebase.auth(); 
-       firebase.firestore().settings({
-    merge: true 
-});
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
+        // Auth Check
+        auth.onAuthStateChanged(user => {
+            if (!user) window.location = 'index.html';
+        });
 
-
-
-        document.addEventListener("DOMContentLoaded", () => {
-        // Referências dos elementos DOM
-        const formVenda = document.getElementById("form-venda");
-        const selectVestido = document.querySelector("#form-venda select[name='vestido']");
-        const listaDiv = document.getElementById("lista-disponiveis");
-        const selectDevolucao = document.querySelector("#form-devolucao select[name='vestidoAlugado']");
-        const historicoDiv = document.getElementById("historico-vendas-locacao");
+        // DOM Elements
+        const formVenda = document.getElementById('form-venda');
+        const formCadastro = document.getElementById('form-cadastro');
+        const formDevolucao = document.getElementById('form-devolucao');
+        const selectVestidoVenda = document.getElementById('select-vestido-venda');
+        const selectVestidoDevolucao = document.getElementById('select-vestido-devolucao');
+        const listaDisponiveis = document.getElementById('lista-disponiveis');
+        const listaHistorico = document.getElementById('historico-list');
+        const parcelasSelect = document.getElementById('parcelas');
         const formaPagamentoSelect = document.querySelector("select[name='formaPagamento']");
-        const parcelasSelect = document.getElementById("parcelas");
-             
-        for (let i = 1; i <= 12; i++) {
-            const opt = document.createElement("option");
-            opt.value = i;
-            opt.textContent = `${i}x`;
-            parcelasSelect.appendChild(opt);
+
+        // Initialization
+        document.addEventListener("DOMContentLoaded", () => {
+            loadVestidos();
+            loadDevolucoes();
+            loadHistorico();
+
+            // Parcelas Logic
+            for (let i = 1; i <= 12; i++) {
+                const opt = document.createElement("option");
+                opt.value = i;
+                opt.textContent = `${i}x`;
+                parcelasSelect.appendChild(opt);
+            }
+            formaPagamentoSelect.addEventListener("change", () => {
+                if (formaPagamentoSelect.value === 'cartao_credito') {
+                    parcelasSelect.style.display = "block";
+                } else {
+                    parcelasSelect.style.display = "none";
+                }
+            });
+        });
+
+        // 1. Load Inventory (Disponíveis)
+        async function loadVestidos() {
+            listaDisponiveis.innerHTML = '<p style="text-align:center;color:#888;">Atualizando...</p>';
+            selectVestidoVenda.innerHTML = '<option value="">Selecione o Vestido</option>';
+
+            try {
+                const snap = await db.collection('vestidos').where('status', '==', 'disponível').get();
+                listaDisponiveis.innerHTML = '';
+
+                if (snap.empty) {
+                    listaDisponiveis.innerHTML = '<p style="padding:10px; text-align:center;">Nenhum vestido disponível.</p>';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    // Add to Select
+                    const opt = document.createElement('option');
+                    opt.value = doc.id;
+                    opt.textContent = `${d.nome} (Cód: ${d.codigo})`;
+                    selectVestidoVenda.appendChild(opt);
+
+                    // Add to Grid
+                    const card = document.createElement('div');
+                    card.className = 'vestido-card';
+                    card.innerHTML = `
+                        <button class="delete-btn" onclick="deleteVestido('${doc.id}', '${d.nome}')">×</button>
+                        <strong>${d.nome}</strong>
+                        <small>Cód: ${d.codigo}</small>
+                        <div style="font-size:0.9rem; color:#444;">
+                            <div>Venda: <b>R$ ${parseFloat(d.valorVenda).toFixed(2)}</b></div>
+                            <div>Aluguel: <b>R$ ${parseFloat(d.valorAluguel).toFixed(2)}</b></div>
+                        </div>
+                    `;
+                    listaDisponiveis.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                listaDisponiveis.innerHTML = '<p class="error-msg" style="display:block">Erro ao carregar.</p>';
+            }
         }
 
+        // 2. Load Returnables (Alugados)
+        async function loadDevolucoes() {
+            selectVestidoDevolucao.innerHTML = '<option value="">Selecione para Devolução</option>';
+            const snap = await db.collection('vestidos').where('status', '==', 'alugado').get();
+            snap.forEach(doc => {
+                const d = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.textContent = `${d.nome} (Cód: ${d.codigo})`;
+                selectVestidoDevolucao.appendChild(opt);
+            });
+        }
 
+        // 3. Load History
+        async function loadHistorico(filters = {}) {
+            listaHistorico.innerHTML = '<p style="padding:10px;text-align:center;">Carregando...</p>';
+            let query = db.collection('transacoes').orderBy('timestamp', 'desc');
 
-     formaPagamentoSelect.addEventListener("change", () => {
-            if (formaPagamentoSelect.value === "boleto") {
-                parcelasSelect.style.display = "block";
-            } else {
-                parcelasSelect.style.display = "none";
-                parcelasSelect.value = ""; 
+            try {
+                const snap = await query.get();
+                listaHistorico.innerHTML = '';
+
+                const allDocs = snap.docs.map(d => d.data());
+
+                // Filter in JS for flexibility
+                const filtered = allDocs.filter(t => {
+                    let match = true;
+                    if (filters.tipo && t.tipo !== filters.tipo) match = false;
+                    if (filters.cliente && !t.cliente.toLowerCase().includes(filters.cliente.toLowerCase())) match = false;
+                    // Date logic could go here
+                    return match;
+                });
+
+                if (filtered.length === 0) {
+                    listaHistorico.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">Nenhum registro encontrado.</p>';
+                    return;
+                }
+
+                filtered.forEach(t => {
+                    const div = document.createElement('div');
+                    div.className = 'historico-item';
+                    const tagClass = t.tipo === 'venda' ? 'venda' : 'aluguel';
+                    div.innerHTML = `
+                        <div>
+                            <span class="tag ${tagClass}">${t.tipo}</span>
+                            <strong style="margin-left:10px;">${t.item}</strong>
+                            <span style="color:#666; margin-left:5px;">para ${t.cliente}</span>
+                            <div style="font-size:0.85rem; color:#888; margin-top:4px;">${t.data} | Pagamento: ${t.parcelas ? t.parcelas + 'x' : 'À vista'} (${t.formaPagamento || 'N/A'})</div>
+                        </div>
+                        <div style="font-weight:bold;">
+                            R$ ${parseFloat(t.valor).toFixed(2)}
+                        </div>
+                    `;
+                    listaHistorico.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Erro History:", err);
+                listaHistorico.innerHTML = '<p>Erro ao carregar histórico.</p>';
             }
-        });
-formVenda.addEventListener("submit", async (e) => {
+        }
+
+        // --- Actions ---
+
+        // Cadastrar Vestido
+        formCadastro.addEventListener('submit', async (e) => {
             e.preventDefault();
             const f = e.target;
-            const parcelas = f.parcelas.value;
-            
-        });
-
-
-            const formCadastro = document.getElementById("form-cadastro");
-        const formDevolucao = document.getElementById("form-devolucao");
-
-        const msgCadastroSucesso = document.getElementById("msg-cadastro-sucesso");
-        const msgCadastroErro = document.getElementById("msg-cadastro-erro");
-        const msgVendaSucesso = document.getElementById("mensagem-sucesso");
-        const msgVendaErro = document.getElementById("mensagem-erro-venda");
-        const msgDevolucaoSucesso = document.getElementById("msg-devolucao-sucesso");
-        const msgDevolucaoErro = document.getElementById("msg-devolucao-erro");
-
-        const loadingDisponiveis = document.getElementById("loading-disponiveis");
-        const loadingHistorico = document.getElementById("loading-historico");
-
-        const filtroTipo = document.getElementById("filtro-tipo");
-        const filtroCliente = document.getElementById("filtro-cliente");
-        const filtroDataInicio = document.getElementById("filtro-data-inicio");
-        const filtroDataFim = document.getElementById("filtro-data-fim");
-        const btnExportar = document.getElementById("btn-exportar");
-
-
-            // --- Funções Utilitárias ---
-
-            /**
-             * Exibe um elemento de mensagem e o esconde após um atraso.
-             * @param {HTMLElement} element - O elemento da mensagem a ser exibido.
-             * @param {number} delay - Atraso em milissegundos antes de esconder.
-             */
-            function showMessage(element, delay = 3000) {
-                element.style.display = "block";
-                setTimeout(() => {
-                    element.style.display = "none";
-                }, delay);
-            }
-
-            /**
-             * Formata um número para moeda brasileira (R$).
-             * @param {number} value - O número a ser formatado.
-             * @returns {string} String da moeda formatada.
-             */
-            function formatCurrency(value) {
-                return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
-            }
-
-            // --- Funções de Carregamento de Dados ---
-
-            /**
-             * Carrega e exibe os vestidos com status "disponível".
-             */
-            async function loadVestidosDisponiveis() {
-                loadingDisponiveis.style.display = "block"; // Mostra mensagem de carregamento
-                listaDiv.innerHTML = ""; // Limpa a lista anterior
-                selectVestido.innerHTML = '<option value="">Selecione o Vestido</option>'; // Reseta o select
-
-                try {
-                    const snapshot = await db.collection("vestidos").where("status", "==", "disponível").get();
-                    if (snapshot.empty) {
-                        listaDiv.innerHTML = '<p>Nenhum vestido disponível no momento.</p>';
-                    } else {
-                        snapshot.forEach(doc => {
-                            const d = doc.data();
-                            const option = document.createElement("option");
-                            option.value = doc.id;
-                            option.textContent = `${d.nome} (Cód: ${d.codigo})`;
-                            selectVestido.appendChild(option);
-
-                            const div = document.createElement("div");
-                            div.className = "vestido-card";
-                            div.innerHTML = `
-                                <p>
-                                    <strong>${d.nome}</strong> (Cód: ${d.codigo}) <br>
-                                    Venda: ${formatCurrency(d.valorVenda)} | Aluguel: ${formatCurrency(d.valorAluguel)}
-                                </p>
-                            `;
-                            // Botão de Excluir (Opcional - com confirmação e verificação de transações)
-                            const deleteBtn = document.createElement("button");
-                            deleteBtn.textContent = "Excluir";
-                            deleteBtn.onclick = () => handleDeleteVestido(doc.id, d.nome);
-                            div.appendChild(deleteBtn);
-
-                            listaDiv.appendChild(div);
-                        });
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar vestidos disponíveis:", error);
-                    listaDiv.innerHTML = '<p class="error-message">Erro ao carregar vestidos. Tente novamente mais tarde.</p>';
-                } finally {
-                    loadingDisponiveis.style.display = "none"; // Esconde mensagem de carregamento
-                }
-            }
-
-            /**
-             * Carrega e exibe os vestidos com status "alugado" para a seleção de devolução.
-             */
-            async function loadVestidosAlugadosParaDevolucao() {
-                selectDevolucao.innerHTML = '<option value="">Selecionar vestido alugado</option>'; // Reseta o select
-                try {
-                    const snapshot = await db.collection("vestidos").where("status", "==", "alugado").get();
-                    if (snapshot.empty) {
-                        const opt = document.createElement("option");
-                        opt.value = "";
-                        opt.textContent = "Nenhum vestido alugado no momento.";
-                        opt.disabled = true; // Desabilita a opção se não houver vestidos alugados
-                        selectDevolucao.appendChild(opt);
-                    } else {
-                        snapshot.forEach(doc => {
-                            const d = doc.data();
-                            const opt = document.createElement("option");
-                            opt.value = doc.id;
-                            opt.textContent = `${d.nome} (Cód: ${d.codigo})`;
-                            selectDevolucao.appendChild(opt);
-                        });
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar vestidos alugados:", error);
-                }
-            }
-
-            /**
-             * Carrega e exibe o histórico de transações, com filtros e opção de exportação.
-             * @param {string} tipoFiltro - Filtro por tipo (venda/aluguel).
-             * @param {string} clienteFiltro - Filtro por nome do cliente.
-             * @param {string} dataInicio - Data de início para o filtro.
-             * @param {string} dataFim - Data de fim para o filtro.
-             * @param {boolean} exportar - Se true, exporta para CSV em vez de exibir.
-             */
-            async function carregarHistorico(tipoFiltro = "", clienteFiltro = "", dataInicio = "", dataFim = "", exportar = false) {
-                loadingHistorico.style.display = "block"; // Mostra mensagem de carregamento
-                historicoDiv.innerHTML = ""; // Limpa a lista anterior
-                let transacoesFiltradas = [];
-
-                try {
-                    const query = db.collection("transacoes").orderBy("timestamp", "desc");
-                    const querySnapshot = await query.get();
-                    const allTransacoes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                    transacoesFiltradas = allTransacoes.filter(t => {
-                        const dataTransacao = t.timestamp ? new Date(t.timestamp.toDate()) : null;
-
-                        const tipoMatch = !tipoFiltro || t.tipo === tipoFiltro;
-                        const clienteMatch = !clienteFiltro || (t.cliente && t.cliente.toLowerCase().includes(clienteFiltro.toLowerCase()));
-
-                        let dataMatch = true;
-                        if (dataTransacao) {
-                            if (dataInicio) {
-                                const inicio = new Date(dataInicio);
-                                inicio.setHours(0, 0, 0, 0); // Normaliza para o início do dia
-                                dataMatch = dataMatch && dataTransacao >= inicio;
-                            }
-                            if (dataFim) {
-                                const fim = new Date(dataFim);
-                                fim.setHours(23, 59, 59, 999); // Normaliza para o fim do dia
-                                dataMatch = dataMatch && dataTransacao <= fim;
-                            }
-                        } else if (dataInicio || dataFim) { // Se houver filtro de data mas sem timestamp na transação, não corresponde
-                            dataMatch = false;
-                        }
-
-                        return tipoMatch && clienteMatch && dataMatch;
-                    });
-
-                    if (exportar) {
-                        exportarCSV(transacoesFiltradas);
-                    } else {
-                        if (transacoesFiltradas.length === 0) {
-                            historicoDiv.innerHTML = '<p>Nenhuma transação encontrada com os filtros aplicados.</p>';
-                        } else {
-                            transacoesFiltradas.forEach(t => {
-                                const div = document.createElement("div");
-                                div.className = "historico-card";
-                                div.innerHTML = `
-                                    <p>
-                                        <strong>${t.tipo.toUpperCase()}</strong> – ${t.item} para <strong>${t.cliente}</strong> <br>
-                                        ${t.cpf ? `(CPF: ${t.cpf}) ` : ''} ${t.telefone ? `(Tel: ${t.telefone}) ` : ''} em ${t.data} - ${formatCurrency(t.valor)}
-                                    </p>
-                                `;
-                                historicoDiv.appendChild(div);
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar histórico:", error);
-                    historicoDiv.innerHTML = '<p class="error-message">Erro ao carregar histórico. Tente novamente mais tarde.</p>';
-                } finally {
-                    loadingHistorico.style.display = "none"; // Esconde mensagem de carregamento
-                }
-            }
-
-            // --- Funções de Eventos (Manipuladores de Formulários) ---
-
-            // Cadastro de vestido
-            formCadastro.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const f = e.target;
-                const novo = {
+            try {
+                await db.collection('vestidos').add({
                     nome: f.nome.value,
                     codigo: f.codigo.value,
-                    valorVenda: parseFloat(f.valorVenda.value),
-                    valorAluguel: parseFloat(f.valorAluguel.value),
-                    status: "disponível",
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Adiciona timestamp do servidor
-                };
-                try {
-                    await db.collection("vestidos").add(novo);
-                    showMessage(msgCadastroSucesso);
-                    f.reset();
-                    // Recarrega as listas relevantes sem recarregar a página inteira
-                    loadVestidosDisponiveis();
-                    loadVestidosAlugadosParaDevolucao();
-                } catch (error) {
-                    console.error("Erro ao cadastrar vestido:", error);
-                    showMessage(msgCadastroErro);
-                }
-            });
-
-            // Venda ou aluguel
-            formVenda.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const f = e.target;
-                const cliente = f.cliente.value.trim();
-                const cpf = f.cpf.value.trim();
-                const telefone = f.telefone.value.trim();
-                const vestidoId = f.vestido.value;
-                const tipo = f.tipo.value;
-                const valor = parseFloat(f.valor.value);
-                const data = new Date().toLocaleDateString('pt-BR'); // Formato de data consistente
-
-                if (!vestidoId) {
-                    alert("Por favor, selecione um vestido.");
-                    return;
-                }
-                if (isNaN(valor) || valor <= 0) {
-                    alert("Por favor, insira um valor válido para a transação.");
-                    return;
-                }
-
-                try {
-                    const vestidoDoc = await db.collection("vestidos").doc(vestidoId).get();
-                    if (!vestidoDoc.exists) {
-                        alert("Vestido selecionado não encontrado.");
-                        return;
-                    }
-                    try {
-  const snapshot = await db.collection("transacoes").get();
-;
-  
-} catch (error) {
-  if (error.code === "permission-denied") {
-    alert("Você não tem permissão para acessar essas informações.");
-  } else {
-    console.error("Erro ao acessar o Firestore:", error);
-  }
-}
-
-                    const nomeVestido = vestidoDoc.data().nome;
-
-                    const transactionData = {
-                    parcelas: formaPagamentoSelect === "boleto" ? parcelas : null,
-                        cliente,
-                        cpf,
-                        telefone,
-                        item: nomeVestido,
-                        valor,
-                        tipo,
-                        data, // Data legível
-                        vestidoId: vestidoId,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp() // Timestamp do servidor para ordenação/filtro
-                    };
-                    await db.collection("transacoes").add(transactionData);
-
-                    const novoStatus = tipo === "aluguel" ? "alugado" : "vendido";
-                    await db.collection("vestidos").doc(vestidoId).update({ status: novoStatus });
-
-                    showMessage(msgVendaSucesso);
-                    f.reset();
-                    // Recarrega todas as listas relevantes após a transação
-                    loadVestidosDisponiveis();
-                    loadVestidosAlugadosParaDevolucao();
-                    carregarHistorico();
-                } catch (error) {
-                    console.error("Erro ao registrar transação:", error);
-                    showMessage(msgVendaErro);
-                }
-            });
-
-            // Devolução
-            formDevolucao.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const vestidoId = e.target.vestidoAlugado.value;
-
-                if (!vestidoId) {
-                    alert("Por favor, selecione um vestido para devolução.");
-                    return;
-                }
-
-                try {
-                    await db.collection("vestidos").doc(vestidoId).update({ status: "disponível" });
-                    showMessage(msgDevolucaoSucesso);
-                    e.target.reset();
-                    // Recarrega as listas relevantes
-                    loadVestidosDisponiveis();
-                    loadVestidosAlugadosParaDevolucao();
-                    carregarHistorico(); // Atualiza o histórico caso a devolução precise ser refletida
-                } catch (error) {
-                    console.error("Erro ao registrar devolução:", error);
-                    showMessage(msgDevolucaoErro);
-                }
-            });
-
-            /**
-             * Lida com a exclusão de um vestido, verificando se há transações associadas.
-             * @param {string} vestidoId - ID do vestido a ser excluído.
-             * @param {string} nomeVestido - Nome do vestido para a mensagem de confirmação.
-             */
-            async function handleDeleteVestido(vestidoId, nomeVestido) {
-                if (confirm(`Tem certeza que deseja excluir o vestido "${nomeVestido}"? Esta ação é irreversível e só é possível se não houver transações associadas!`)) {
-                    try {
-                        // Primeiro, verifica se há transações associadas
-                        const transactionsSnapshot = await db.collection("transacoes").where("vestidoId", "==", vestidoId).get();
-                        if (!transactionsSnapshot.empty) {
-                            alert("Não é possível excluir este vestido pois ele possui transações associadas. Por favor, remova as transações primeiro ou altere o status do vestido para 'vendido' caso não precise mais alugá-lo.");
-                            return;
-                        }
-
-                        await db.collection("vestidos").doc(vestidoId).delete();
-                        alert(`Vestido "${nomeVestido}" excluído com sucesso!`);
-                        loadVestidosDisponiveis(); // Atualiza a lista após a exclusão
-                        loadVestidosAlugadosParaDevolucao(); // Atualiza caso fosse um vestido alugado
-                    } catch (error) {
-                        console.error("Erro ao excluir vestido:", error);
-                        alert("Erro ao excluir vestido. Por favor, tente novamente.");
-                    }
-                }
-            }
-
-            // Filtros do Histórico: Adiciona event listeners a todos os campos de filtro
-            [filtroTipo, filtroCliente, filtroDataInicio, filtroDataFim].forEach(element => {
-                element.addEventListener("input", () => {
-                    carregarHistorico(filtroTipo.value, filtroCliente.value, filtroDataInicio.value, filtroDataFim.value);
+                    valorVenda: f.valorVenda.value,
+                    valorAluguel: f.valorAluguel.value,
+                    status: 'disponível',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-            });
-
-            // Botão Exportar CSV
-            btnExportar.addEventListener("click", () => {
-                carregarHistorico(filtroTipo.value, filtroCliente.value, filtroDataInicio.value, filtroDataFim.value, true);
-            });
-
-            // --- Função de Exportação para CSV ---
-            /**
-             * Exporta uma lista de transações para um arquivo CSV.
-             * @param {Array<Object>} transacoes - Array de objetos de transação.
-             */
-            function exportarCSV(transacoes) {
-                const linhas = [
-                    ["Tipo", "Cliente", "CPF", "Telefone", "Item", "Data", "Valor"]
-                ];
-
-                transacoes.forEach(t => {
-                    linhas.push([
-                        t.tipo || '',
-                        t.cliente || '',
-                        t.cpf || '',
-                        t.telefone || '',
-                        t.item || '',
-                        t.data || '',
-                        t.valor || ''
-                    ]);
-                });
-
-                // Escapar as células para CSV (lida com vírgulas e aspas duplas dentro dos dados)
-                const csv = linhas.map(l => l.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                // Nome do arquivo com a data atual
-                link.download = `historico_transacoes_${new Date().toISOString().slice(0,10)}.csv`;
-                
-                // Adiciona e remove o link do corpo para garantir compatibilidade entre navegadores
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                showMessage('msg-cadastro-sucesso');
+                f.reset();
+                loadVestidos();
+            } catch (err) {
+                console.error(err);
+                showMessage('msg-cadastro-erro', true);
             }
-
-            // --- Carregamento Inicial ---
-            // Chama as funções de carregamento de dados quando a página é carregada
-            loadVestidosDisponiveis();
-            loadVestidosAlugadosParaDevolucao();
-            carregarHistorico();
         });
+
+        // Registrar Transação
+        formVenda.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const f = e.target;
+            const vestidoId = f.vestido.value;
+            const tipo = f.tipo.value;
+
+            if (!vestidoId) return alert('Selecione um vestido');
+
+            try {
+                // Get Vestido Name
+                const vDoc = await db.collection('vestidos').doc(vestidoId).get();
+                if (!vDoc.exists) throw new Error('Vestido não existe');
+                const vData = vDoc.data();
+
+                const transactionData = {
+                    cliente: f.cliente.value,
+                    cpf: f.cpf.value,
+                    telefone: f.telefone.value,
+                    item: vData.nome,
+                    vestidoId: vestidoId,
+                    tipo: tipo,
+                    valor: f.valor.value,
+                    formaPagamento: f.formaPagamento.value,
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    parcelas: (f.formaPagamento.value === 'cartao_credito') ? f.parcelas.value : null
+                };
+
+                // Save Transaction
+                await db.collection('transacoes').add(transactionData);
+
+                // Update Vestido Status
+                const newStatus = tipo === 'aluguel' ? 'alugado' : 'vendido';
+                await db.collection('vestidos').doc(vestidoId).update({ status: newStatus });
+
+                showMessage('msg-venda-sucesso');
+                f.reset();
+                loadVestidos();
+                loadDevolucoes();
+                loadHistorico();
+
+            } catch (err) {
+                console.error(err);
+                showMessage('msg-venda-erro', true);
+            }
+        });
+
+        // Registrar Devolução
+        formDevolucao.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const vid = e.target.vestidoAlugado.value;
+            if (!vid) return alert('Selecione o vestido');
+
+            try {
+                await db.collection('vestidos').doc(vid).update({ status: 'disponível' });
+                showMessage('msg-devolucao-sucesso');
+                e.target.reset();
+                loadVestidos();
+                loadDevolucoes();
+            } catch (err) {
+                console.error(err);
+                alert('Erro na devolução');
+            }
+        });
+
+        // Delete (Excluir)
+        window.deleteVestido = async (id, nome) => {
+            if (!confirm(`Excluir o vestido "${nome}"?`)) return;
+            try {
+                await db.collection('vestidos').doc(id).delete();
+                loadVestidos();
+            } catch (err) {
+                alert('Erro ao excluir: ' + err.message);
+            }
+        };
+
+        // UI Helpers
+        function showMessage(id, isError = false) {
+            const el = document.getElementById(id);
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        // Filter Events
+        document.getElementById('filtro-tipo').addEventListener('change', (e) => loadHistorico({ tipo: e.target.value, cliente: document.getElementById('filtro-cliente').value }));
+        document.getElementById('filtro-cliente').addEventListener('input', (e) => loadHistorico({ tipo: document.getElementById('filtro-tipo').value, cliente: e.target.value }));
+
     </script>
 </body>
-</html>
 
+</html>
