@@ -282,7 +282,8 @@
             const sorted = Object.entries(allProjects).sort((a, b) => a[1].nome.localeCompare(b[1].nome));
 
             sorted.forEach(([id, p]) => {
-                if (p.statusAtual !== 'Finalizado') {
+                const status = (p.statusAtual || '').trim().toLowerCase();
+                if (status !== 'finalizado') {
                     const opt = document.createElement('option');
                     opt.value = id;
                     opt.text = `${p.nome} (${p.statusAtual})`;
@@ -329,7 +330,17 @@
 
             // 2. Distribute Cards
             Object.entries(allProjects).forEach(([id, p]) => {
-                if (p.statusAtual === 'Finalizado') return;
+                // Whitelist of active stages (Normalized to lowercase)
+                const activeStages = [
+                    "modelagem", "corte", "costura", "acabamento",
+                    "prova", "ajuste", "lavanderia"
+                ];
+
+                const status = (p.statusAtual || '').trim().toLowerCase();
+
+                // Filter: Only show active stages
+                // This implicitly hides "Finalizado" and any other unknown status
+                if (!activeStages.includes(status)) return;
 
                 // Priority: Manual Schedule > Delivery Date
                 let targetDate = p.dataAgendada || p.dataEntrega;
@@ -348,7 +359,10 @@
                         const card = document.createElement('div');
                         card.className = `task-card ${isManual ? 'manual-schedule' : ''}`;
                         card.innerHTML = `
-                            ${isManual ? '<i class="fas fa-times remove-schedule" onclick="limparAgendamento(\'' + id + '\')" title="Remover agendamento"></i>' : ''}
+                            ${isManual ?
+                                '<i class="fas fa-times remove-schedule" onclick="limparAgendamento(\'' + id + '\')" title="Remover agendamento"></i>' :
+                                '<i class="fas fa-check-circle remove-schedule" style="color:#2ecc71;" onclick="concluirProjeto(\'' + id + '\')" title="Concluir Projeto"></i>'
+                            }
                             <strong>${p.nome}</strong>
                             <div style="font-size:0.8rem; color:#666; margin-top:5px;">
                                 ${isManual ? '<i class="fas fa-thumbtack" style="color:#c7a17a"></i> Agendado' : '📅 Entrega: ' + p.dataEntrega.split('-').reverse().join('/')}
@@ -359,6 +373,40 @@
                     }
                 }
             });
+        }
+
+        async function concluirProjeto(id) {
+            if (!confirm('Deseja marcar este projeto como FINALIZADO? Ele sairá do cronograma.')) return;
+
+            const ref = db.ref('projetos/' + id);
+            try {
+                const snap = await ref.once('value');
+                const p = snap.val();
+                if (!p) return;
+
+                let etapas = Array.isArray(p.etapas) ? p.etapas : [];
+
+                // Close current step
+                const ultimaEtapaAtiva = etapas.find(e => e && e.nome === p.statusAtual && e.fim === null);
+                if (ultimaEtapaAtiva) {
+                    ultimaEtapaAtiva.fim = Date.now();
+                } else if (etapas.length > 0) {
+                    etapas[etapas.length - 1].fim = Date.now();
+                }
+
+                // Add Finalizado
+                etapas.push({ nome: 'Finalizado', inicio: Date.now(), fim: null });
+
+                await ref.update({
+                    statusAtual: 'Finalizado',
+                    etapas: etapas
+                });
+                // Alert is automatic update via on('value') but we can notify
+                // showToast or alert? Alert is used elsewhere
+            } catch (error) {
+                console.error(error);
+                alert('Erro ao finalizar projeto.');
+            }
         }
     </script>
 </body>
