@@ -237,6 +237,29 @@
         }
 
         /* Responsive */
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
         @media (min-width: 900px) {
             .main-container {
                 grid-template-columns: 1fr 1fr;
@@ -330,7 +353,17 @@
 
             <!-- Active Inventory -->
             <section class="section-card">
-                <h2>Vestidos Disponíveis</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2 style="margin:0; border:none;">Vestidos Disponíveis</h2>
+                    <select id="sort-vestidos"
+                        style="width:auto; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                        <option value="default">Padrão (Nome)</option>
+                        <option value="venda_desc">Maior Valor Venda</option>
+                        <option value="venda_asc">Menor Valor Venda</option>
+                        <option value="aluguel_desc">Maior Valor Aluguel</option>
+                        <option value="aluguel_asc">Menor Valor Aluguel</option>
+                    </select>
+                </div>
                 <div class="inventory-grid" id="lista-disponiveis">
                     <p style="color:#666; text-align:center;">Carregando...</p>
                 </div>
@@ -361,6 +394,37 @@
         </div>
 
     </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="margin-top:0;">Editar Vestido</h2>
+            <form id="form-editar" onsubmit="saveEdit(event)">
+                <input type="hidden" id="edit-id">
+                <label style="display:block; margin-bottom:5px; font-weight:bold;">Nome</label>
+                <input type="text" id="edit-nome" required>
+
+                <label style="display:block; margin-bottom:5px; margin-top:10px; font-weight:bold;">Código</label>
+                <input type="text" id="edit-codigo" required>
+
+                <label style="display:block; margin-bottom:5px; margin-top:10px; font-weight:bold;">Valor Venda
+                    (R$)</label>
+                <input type="number" id="edit-venda" step="0.01" required>
+
+                <label style="display:block; margin-bottom:5px; margin-top:10px; font-weight:bold;">Valor Aluguel
+                    (R$)</label>
+                <input type="number" id="edit-aluguel" step="0.01" required>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                    <button type="button" onclick="closeEditModal()"
+                        style="background:#ccc; border:none; padding:10px 15px; border-radius:6px; cursor:pointer;">Cancelar</button>
+                    <button type="submit"
+                        style="background:#000; color:#fff; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Salvar
+                        Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         // Firebase Config
@@ -429,11 +493,30 @@
                     return;
                 }
 
-                snap.forEach(doc => {
-                    const d = doc.data();
+                // Client-side Sorting
+                const sortOption = document.getElementById('sort-vestidos').value;
+                const vestidos = [];
+                snap.forEach(doc => vestidos.push({ ...doc.data(), id: doc.id }));
+
+                vestidos.sort((a, b) => {
+                    const vendaA = parseFloat(a.valorVenda) || 0;
+                    const vendaB = parseFloat(b.valorVenda) || 0;
+                    const aluguelA = parseFloat(a.valorAluguel) || 0;
+                    const aluguelB = parseFloat(b.valorAluguel) || 0;
+
+                    switch (sortOption) {
+                        case 'venda_desc': return vendaB - vendaA;
+                        case 'venda_asc': return vendaA - vendaB;
+                        case 'aluguel_desc': return aluguelB - aluguelA;
+                        case 'aluguel_asc': return aluguelA - aluguelB;
+                        default: return a.nome.localeCompare(b.nome);
+                    }
+                });
+
+                vestidos.forEach(d => {
                     // Add to Select
                     const opt = document.createElement('option');
-                    opt.value = doc.id;
+                    opt.value = d.id;
                     opt.textContent = `${d.nome} (Cód: ${d.codigo})`;
                     selectVestidoVenda.appendChild(opt);
 
@@ -441,12 +524,13 @@
                     const card = document.createElement('div');
                     card.className = 'vestido-card';
                     card.innerHTML = `
-                        <button class="delete-btn" onclick="deleteVestido('${doc.id}', '${d.nome}')">×</button>
+                        <button class="delete-btn" onclick="deleteVestido('${d.id}', '${d.nome}')">×</button>
+                        <button class="edit-btn" onclick="openEditModal('${d.id}', '${d.nome}', '${d.codigo}', '${d.valorVenda}', '${d.valorAluguel}')" style="float:right; margin-right:5px; background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.8rem;">✎</button>
                         <strong>${d.nome}</strong>
                         <small>Cód: ${d.codigo}</small>
                         <div style="font-size:0.9rem; color:#444;">
-                            <div>Venda: <b>R$ ${parseFloat(d.valorVenda).toFixed(2)}</b></div>
-                            <div>Aluguel: <b>R$ ${parseFloat(d.valorAluguel).toFixed(2)}</b></div>
+                            <div>Venda: <b>${formatCurrency(d.valorVenda)}</b></div>
+                            <div>Aluguel: <b>${formatCurrency(d.valorAluguel)}</b></div>
                         </div>
                     `;
                     listaDisponiveis.appendChild(card);
@@ -507,7 +591,7 @@
                             <div style="font-size:0.85rem; color:#888; margin-top:4px;">${t.data} | Pagamento: ${t.parcelas ? t.parcelas + 'x' : 'À vista'} (${t.formaPagamento || 'N/A'})</div>
                         </div>
                         <div style="font-weight:bold;">
-                            R$ ${parseFloat(t.valor).toFixed(2)}
+                            ${formatCurrency(t.valor)}
                         </div>
                     `;
                     listaHistorico.appendChild(div);
@@ -619,7 +703,50 @@
             }
         };
 
+        // --- Edit Logic ---
+        window.openEditModal = (id, nome, codigo, venda, aluguel) => {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-nome').value = nome;
+            document.getElementById('edit-codigo').value = codigo;
+            document.getElementById('edit-venda').value = venda;
+            document.getElementById('edit-aluguel').value = aluguel;
+
+            document.getElementById('editModal').style.display = 'flex';
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('editModal').style.display = 'none';
+        };
+
+        window.saveEdit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const nome = document.getElementById('edit-nome').value;
+            const codigo = document.getElementById('edit-codigo').value;
+            const venda = document.getElementById('edit-venda').value;
+            const aluguel = document.getElementById('edit-aluguel').value;
+
+            try {
+                await db.collection('vestidos').doc(id).update({
+                    nome: nome,
+                    codigo: codigo,
+                    valorVenda: venda,
+                    valorAluguel: aluguel
+                });
+                closeEditModal();
+                loadVestidos();
+                alert('Vestido atualizado com sucesso!');
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao atualizar: ' + err.message);
+            }
+        };
+
         // UI Helpers
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(value) || 0);
+        }
+
         function showMessage(id, isError = false) {
             const el = document.getElementById(id);
             el.style.display = 'block';
@@ -629,6 +756,7 @@
         // Filter Events
         document.getElementById('filtro-tipo').addEventListener('change', (e) => loadHistorico({ tipo: e.target.value, cliente: document.getElementById('filtro-cliente').value }));
         document.getElementById('filtro-cliente').addEventListener('input', (e) => loadHistorico({ tipo: document.getElementById('filtro-tipo').value, cliente: e.target.value }));
+        document.getElementById('sort-vestidos').addEventListener('change', loadVestidos);
 
     </script>
 </body>
