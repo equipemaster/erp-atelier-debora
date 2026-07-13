@@ -1,20 +1,6 @@
-const firebaseConfig = {
-    apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-    authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-    projectId: "erp-ateliedebora-275e7",
-    storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-    messagingSenderId: "375960061963",
-    appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-    measurementId: "G-ZTCE581F5W"
-};
-
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
-const auth = firebase.auth();
-const db = firebase.database();
+import { onAuthStateChanged } from 'firebase/auth';
+import { ref, onValue } from 'firebase/database';
+import { auth, database as db } from './firebase-config.js';
 
 const etapasKanban = [
     "Modelagem",
@@ -28,7 +14,7 @@ const etapasKanban = [
 ];
 
 // Check Authentication
-auth.onAuthStateChanged(user => {
+onAuthStateChanged(auth, user => {
     if (!user) {
         alert('Você precisa estar logado.');
         window.location.href = 'index.html';
@@ -36,7 +22,7 @@ auth.onAuthStateChanged(user => {
     }
 
     // Real-time updates
-    db.ref('projetos').on('value', (snapshot) => {
+    onValue(ref(db, 'projetos'), (snapshot) => {
         const data = snapshot.val();
         if (document.getElementById('kanbanContainer')) {
             atualizarKanban(data);

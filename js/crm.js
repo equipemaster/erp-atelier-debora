@@ -1,10 +1,45 @@
-// Firebase Configuration is expected to be loaded in the HTML from a shared source or init block
-// Assuming 'db' and 'auth' are available globally or we initialize them here if needed.
+import {
+    collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, where, getDocs, serverTimestamp
+} from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { db, auth } from './firebase-config.js';
 
 // --- Global State ---
 let allClients = [];
 let currentClientId = null;
 let unsubscribeInteractions = null;
+
+// Funil real do relacionamento com a cliente, do primeiro contato à entrega.
+const STAGES = [
+    { key: 'novo_lead', label: 'Novo Lead' },
+    { key: 'em_conversa', label: 'Em Conversa' },
+    { key: 'prova_agendada', label: 'Prova Agendada' },
+    { key: 'cliente_ativo', label: 'Cliente Ativo' },
+    { key: 'finalizado', label: 'Finalizado' },
+];
+
+function stageIndex(status) {
+    const i = STAGES.findIndex(s => s.key === status);
+    return i === -1 ? 0 : i;
+}
+
+function renderStageTrack(status, { withLabel = false } = {}) {
+    const idx = stageIndex(status);
+    const dots = STAGES.map((s, i) =>
+        `<span class="stage-dot ${i <= idx ? 'filled' : ''}" title="${s.label}"></span>`
+    ).join('');
+    const label = withLabel ? `<span class="stage-label">${STAGES[idx].label}</span>` : '';
+    return `${dots}${label}`;
+}
+
+function initials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    const first = parts[0][0];
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+    return (first + last).toUpperCase();
+}
 
 // --- DOM Elements ---
 const clientListEl = document.getElementById('client-list');
@@ -23,7 +58,7 @@ const formInteraction = document.getElementById('form-interaction');
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     // Auth Check (copied from other files)
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
         if (!user) window.location = 'index.html';
         else loadClients();
     });
@@ -39,23 +74,22 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadClients() {
     clientListEl.innerHTML = '<div style="padding:20px; text-align:center;">Carregando...</div>';
 
-    db.collection('clientes').orderBy('nome')
-        .onSnapshot(snapshot => {
-            allClients = [];
-            snapshot.forEach(doc => {
-                allClients.push({ id: doc.id, ...doc.data() });
-            });
-            renderClientList();
-
-            // If a client is currently selected, refresh their details
-            if (currentClientId) {
-                const refreshedClient = allClients.find(c => c.id === currentClientId);
-                if (refreshedClient) renderClientDetails(refreshedClient);
-            }
-        }, err => {
-            console.error("Error loading clients:", err);
-            clientListEl.innerHTML = '<div style="padding:20px; color:red;">Erro ao carregar clientes.</div>';
+    onSnapshot(query(collection(db, 'clientes'), orderBy('nome')), snapshot => {
+        allClients = [];
+        snapshot.forEach(docSnap => {
+            allClients.push({ id: docSnap.id, ...docSnap.data() });
         });
+        renderClientList();
+
+        // If a client is currently selected, refresh their details
+        if (currentClientId) {
+            const refreshedClient = allClients.find(c => c.id === currentClientId);
+            if (refreshedClient) renderClientDetails(refreshedClient);
+        }
+    }, err => {
+        console.error("Error loading clients:", err);
+        clientListEl.innerHTML = '<div style="padding:20px; color:red;">Erro ao carregar clientes.</div>';
+    });
 }
 
 // 2. Render List
@@ -81,18 +115,12 @@ function renderClientList() {
         card.className = `client-card ${currentClientId === client.id ? 'active' : ''}`;
         card.onclick = () => selectClient(client.id);
 
-        // Format Status
-        const statusLabel = client.status ? client.status.replace('_', ' ').toUpperCase() : 'NOVO';
-        const statusClass = client.status ? `status-${client.status.toLowerCase()}` : '';
-
         card.innerHTML = `
-            <h3>
-                ${client.nome}
-                <span class="status-badge ${statusClass}">${statusLabel}</span>
-            </h3>
-            <div class="client-info-preview">
-                ${client.telefone || 'Sem telefone'}<br>
-                ${client.email || ''}
+            <div class="client-card-avatar">${initials(client.nome)}</div>
+            <div class="client-card-body">
+                <h3>${client.nome}</h3>
+                <div class="client-info-preview">${client.telefone || 'Sem telefone'}</div>
+                <div class="stage-track">${renderStageTrack(client.status)}</div>
             </div>
         `;
         clientListEl.appendChild(card);
@@ -122,16 +150,16 @@ async function saveClient(e) {
             altura: document.getElementById('medida-altura').value,
             ombro: document.getElementById('medida-ombro').value
         },
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        updatedAt: serverTimestamp()
     };
 
     try {
         if (id) {
-            await db.collection('clientes').doc(id).update(data);
+            await updateDoc(doc(db, 'clientes', id), data);
             alert('Cliente atualizado!');
         } else {
-            data.dataCadastro = firebase.firestore.FieldValue.serverTimestamp();
-            const ref = await db.collection('clientes').add(data);
+            data.dataCadastro = serverTimestamp();
+            const ref = await addDoc(collection(db, 'clientes'), data);
             selectClient(ref.id); // Auto select new client
             alert('Cliente cadastrado!');
         }
@@ -150,7 +178,7 @@ async function deleteClient() {
     if (!currentClientId || !confirm('Tem certeza? Isso apagará o cliente e seu histórico de interações, mas NÃO apagará vendas antigas.')) return;
 
     try {
-        await db.collection('clientes').doc(currentClientId).delete();
+        await deleteDoc(doc(db, 'clientes', currentClientId));
         currentClientId = null;
         showEmptyState();
         alert('Cliente removido.');
@@ -178,14 +206,14 @@ function renderClientDetails(client) {
     detailContentEl.style.display = 'flex';
 
     // Populate Info
+    document.getElementById('view-avatar').textContent = initials(client.nome);
     document.getElementById('view-nome').textContent = client.nome;
     document.getElementById('view-phone').textContent = client.telefone || '-';
     document.getElementById('view-email').textContent = client.email || '-';
     document.getElementById('view-cpf').textContent = client.cpf || '-';
     document.getElementById('view-obs').textContent = client.observacoes || 'Nenhuma observação.';
 
-    const statusLabel = client.status ? client.status.replace('_', ' ').toUpperCase() : '-';
-    document.getElementById('view-status').textContent = statusLabel;
+    document.getElementById('view-stage-track').innerHTML = renderStageTrack(client.status, { withLabel: true });
 
     // Measurements
     const m = client.medidas || {};
@@ -238,17 +266,17 @@ function loadInteractions(clientId) {
 
     if (unsubscribeInteractions) unsubscribeInteractions();
 
-    unsubscribeInteractions = db.collection('clientes').doc(clientId).collection('interacoes')
-        .orderBy('data', 'desc')
-        .onSnapshot(snap => {
+    unsubscribeInteractions = onSnapshot(
+        query(collection(db, 'clientes', clientId, 'interacoes'), orderBy('data', 'desc')),
+        snap => {
             container.innerHTML = '';
             if (snap.empty) {
                 container.innerHTML = '<p style="color:#aaa; font-style:italic;">Nenhuma interação registrada.</p>';
                 return;
             }
 
-            snap.forEach(doc => {
-                const i = doc.data();
+            snap.forEach(docSnap => {
+                const i = docSnap.data();
                 const date = i.data ? i.data.toDate().toLocaleString('pt-BR') : '?';
 
                 const div = document.createElement('div');
@@ -282,10 +310,10 @@ async function saveInteraction(e) {
     const type = document.getElementById('interaction-tipo').value;
 
     try {
-        await db.collection('clientes').doc(currentClientId).collection('interacoes').add({
+        await addDoc(collection(db, 'clientes', currentClientId, 'interacoes'), {
             tipo: type,
             resumo: summary,
-            data: firebase.firestore.FieldValue.serverTimestamp()
+            data: serverTimestamp()
         });
         closeModal('modal-interaction');
     } catch (err) {
@@ -306,7 +334,7 @@ async function loadPurchaseHistory(clientName) {
         // Strategy: Get transactions where 'cliente' field is close to clientName. 
         // NOTE: This relies on exact string match. A better way in future is linking IDs.
 
-        const snap = await db.collection('transacoes').where('cliente', '==', clientName).get();
+        const snap = await getDocs(query(collection(db, 'transacoes'), where('cliente', '==', clientName)));
 
         container.innerHTML = '';
         if (snap.empty) {
@@ -314,8 +342,8 @@ async function loadPurchaseHistory(clientName) {
             return;
         }
 
-        snap.forEach(doc => {
-            const t = doc.data();
+        snap.forEach(docSnap => {
+            const t = docSnap.data();
             const div = document.createElement('div');
             div.style.borderBottom = '1px solid #eee';
             div.style.padding = '10px 0';
@@ -344,3 +372,13 @@ window.onclick = function (event) {
         event.target.style.display = 'none';
     }
 }
+
+// Script de módulo: funções chamadas via onclick/onsubmit inline no HTML
+// precisam ser expostas explicitamente no escopo global.
+window.openNewClient = openNewClient;
+window.openEditClient = openEditClient;
+window.deleteClient = deleteClient;
+window.closeModal = closeModal;
+window.openNewInteraction = openNewInteraction;
+window.saveClient = saveClient;
+window.saveInteraction = saveInteraction;

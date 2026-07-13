@@ -10,61 +10,38 @@
     <!-- Design System -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/crm.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&display=swap" rel="stylesheet">
 
     <!-- Scripts -->
-    <script>
-        const db = firebase.firestore();
-    </script>
-  <script type="module" src="/js/firebase-config.js"></script>
+    <script type="module" src="/js/firebase-config.js"></script>
 </head>
 
-<body>
+<body class="crm-page">
 
     <div class="layout-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>Atelier Débora</h2>
+                <span class="brand-mark">DF</span>
+                <span class="brand-word">Ateliê<br>Débora Freitas</span>
             </div>
 
             <nav class="sidebar-nav">
-                <a href="home.html" class="nav-item">
-                    <span>🏠</span> Início
-                </a>
-                <a href="dashboard.html" class="nav-item">
-                    <span>📊</span> Dashboard
-                </a>
-                <a href="vendas.html" class="nav-item">
-                    <span>👗</span> Vendas & Alugueis
-                </a>
-                <a href="projetos.html" class="nav-item">
-                    <span>✂️</span> Projetos
-                </a>
-                <a href="cronograma.html" class="nav-item">
-                    <span>📅</span> Cronograma
-                </a>
-                <a href="produtos.html" class="nav-item">
-                    <span>📦</span> Controle de Estoque
-                </a>
-                <a href="saida.html" class="nav-item">
-                    <span>📤</span> Saída de Material
-                </a>
-                <a href="contas.html" class="nav-item">
-                    <span>💰</span> Financeiro
-                </a>
-                <a href="crm.html" class="nav-item active">
-                    <span>👥</span> CRM
-                </a>
-                <a href="relatorios.html" class="nav-item">
-                    <span>📈</span> Relatórios
-                </a>
+                <a href="home.html" class="nav-item">Início</a>
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="vendas.html" class="nav-item">Vendas &amp; Aluguéis</a>
+                <a href="projetos.html" class="nav-item">Projetos</a>
+                <a href="cronograma.html" class="nav-item">Cronograma</a>
+                <a href="produtos.html" class="nav-item">Controle de Estoque</a>
+                <a href="saida.html" class="nav-item">Saída de Material</a>
+                <a href="contas.html" class="nav-item">Financeiro</a>
+                <a href="crm.html" class="nav-item active">CRM</a>
+                <a href="relatorios.html" class="nav-item">Relatórios</a>
             </nav>
 
             <div class="sidebar-footer">
-                <a href="#" onclick="auth.signOut()" class="nav-item logout">
-                    <span>🚪</span> Sair
-                </a>
+                <a href="#" onclick="auth.signOut()" class="nav-item logout">Sair</a>
             </div>
         </aside>
 
@@ -72,8 +49,9 @@
         <main class="main-content">
             <header class="top-header">
                 <div class="header-title">
-                    <h1>Gestão de Clientes (CRM)</h1>
-                    <p>Gerencie relacionamentos, medidas e histórico.</p>
+                    <span class="eyebrow">CRM</span>
+                    <h1>Clientes</h1>
+                    <p>Relacionamento, medidas e histórico de cada cliente do ateliê.</p>
                 </div>
                 <div class="header-actions">
                     <button class="action-btn" onclick="openNewClient()">+ Novo Cliente</button>
@@ -86,9 +64,8 @@
                     <div class="search-bar-container">
                         <input type="text" id="search-input" class="search-input"
                             placeholder="Buscar por nome ou telefone...">
-                        <select id="status-filter"
-                            style="width:100%; margin-top:10px; padding:8px; border-radius:8px; border:1px solid #ddd;">
-                            <option value="">Todos os Status</option>
+                        <select id="status-filter" class="status-filter-select">
+                            <option value="">Todos os status</option>
                             <option value="novo_lead">Novo Lead</option>
                             <option value="em_conversa">Em Conversa</option>
                             <option value="prova_agendada">Prova Agendada</option>
@@ -106,7 +83,10 @@
                 <section id="client-detail-section" class="client-detail-section">
 
                     <div id="empty-state" class="empty-state">
-                        <i>👥</i>
+                        <svg class="empty-mark" width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                            <circle cx="24" cy="17" r="8" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M8 41c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="currentColor" stroke-width="1.5" />
+                        </svg>
                         <h3>Selecione um cliente</h3>
                         <p>Clique em um cliente ao lado para ver detalhes e histórico.</p>
                     </div>
@@ -115,17 +95,15 @@
 
                         <div class="detail-header">
                             <div class="client-title">
-                                <h2 id="view-nome">Nome do Cliente</h2>
-                                <span id="view-status" class="status-badge"
-                                    style="font-size:0.9rem; margin-top:5px; display:inline-block;">Status</span>
+                                <div class="client-avatar" id="view-avatar">--</div>
+                                <div>
+                                    <h2 id="view-nome">Nome do Cliente</h2>
+                                    <div class="stage-track" id="view-stage-track"><!-- JS renders --></div>
+                                </div>
                             </div>
                             <div class="client-actions">
-                                <button onclick="openEditClient()"
-                                    style="border:none; background:none; cursor:pointer; font-size:1.2rem;"
-                                    title="Editar">✎</button>
-                                <button onclick="deleteClient()"
-                                    style="border:none; background:none; cursor:pointer; font-size:1.2rem; color:darkred;"
-                                    title="Excluir">🗑️</button>
+                                <button class="icon-btn" onclick="openEditClient()">Editar</button>
+                                <button class="icon-btn danger" onclick="deleteClient()">Excluir</button>
                             </div>
                         </div>
 
@@ -138,11 +116,9 @@
                                     <div class="info-item"><strong>Telefone:</strong> <span id="view-phone">-</span>
                                     </div>
                                     <div class="info-item"><strong>CPF:</strong> <span id="view-cpf">-</span></div>
-                                    <div class="info-item" style="margin-top:10px;">
-                                        <strong>Observações:</strong><br>
-                                        <p id="view-obs"
-                                            style="margin-top:5px; color:#555; background:#f9f9f9; padding:8px; border-radius:4px;">
-                                            -</p>
+                                    <div class="info-item info-item-obs">
+                                        <strong>Observações:</strong>
+                                        <p id="view-obs">-</p>
                                     </div>
                                 </div>
 
@@ -166,12 +142,9 @@
                             <!-- Column 2: Timeline & History -->
                             <div>
                                 <div class="info-group">
-                                    <div
-                                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eaeaea; padding-bottom:10px;">
-                                        <h3 style="margin:0; border:none; padding:0;">Interações</h3>
-                                        <button onclick="openNewInteraction()"
-                                            style="background:var(--accent-color); color:white; border:none; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer;">+
-                                            Nova</button>
+                                    <div class="info-group-header">
+                                        <h3>Interações</h3>
+                                        <button class="btn-add-inline" onclick="openNewInteraction()">+ Nova</button>
                                     </div>
                                     <div id="timeline-container" class="timeline">
                                         <!-- JS renders timeline -->
@@ -198,14 +171,14 @@
     <!-- Modal Client (Create/Edit) -->
     <div id="modal-client" class="modal-overlay">
         <div class="modal-content">
-            <h2 id="modal-title-client" style="margin-top:0;">Novo Cliente</h2>
+            <h2 id="modal-title-client" class="modal-title">Novo Cliente</h2>
             <form id="form-client" onsubmit="saveClient(event)">
                 <input type="hidden" id="client-id">
 
                 <label>Nome Completo *</label>
                 <input type="text" id="client-nome" required>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="form-row-2">
                     <div>
                         <label>Telefone</label>
                         <input type="tel" id="client-telefone">
@@ -228,8 +201,8 @@
                     <option value="finalizado">Finalizado</option>
                 </select>
 
-                <label style="margin-top:10px; font-weight:bold; color:var(--accent-color);">Medidas (Opcional)</label>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                <label class="form-section-label">Medidas (opcional)</label>
+                <div class="form-row-5">
                     <input type="number" id="medida-busto" placeholder="Busto">
                     <input type="number" id="medida-cintura" placeholder="Cintura">
                     <input type="number" id="medida-quadril" placeholder="Quadril">
@@ -237,15 +210,12 @@
                     <input type="number" id="medida-ombro" placeholder="Ombro">
                 </div>
 
-                <label style="margin-top:10px;">Observações</label>
-                <textarea id="client-obs" rows="3"
-                    style="width:100%; border:1px solid #ccc; border-radius:6px; padding:10px;"></textarea>
+                <label>Observações</label>
+                <textarea id="client-obs" rows="3"></textarea>
 
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button type="button" onclick="closeModal('modal-client')"
-                        style="background:#ccc; border:none; padding:10px 15px; border-radius:6px; cursor:pointer;">Cancelar</button>
-                    <button type="submit"
-                        style="background:#000; color:#fff; border:none; padding:10px 15px; border-radius:6px; cursor:pointer;">Salvar</button>
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost" onclick="closeModal('modal-client')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
                 </div>
             </form>
         </div>
@@ -253,8 +223,8 @@
 
     <!-- Modal Interaction -->
     <div id="modal-interaction" class="modal-overlay">
-        <div class="modal-content" style="max-width:350px;">
-            <h2 style="margin-top:0;">Nova Interação</h2>
+        <div class="modal-content modal-content-sm">
+            <h2 class="modal-title">Nova Interação</h2>
             <form id="form-interaction" onsubmit="saveInteraction(event)">
                 <label>Tipo</label>
                 <select id="interaction-tipo" required>
@@ -266,20 +236,17 @@
                 </select>
 
                 <label>Resumo</label>
-                <textarea id="interaction-resumo" rows="4" required placeholder="O que foi conversado?"
-                    style="width:100%; border:1px solid #ccc; border-radius:6px; padding:10px;"></textarea>
+                <textarea id="interaction-resumo" rows="4" required placeholder="O que foi conversado?"></textarea>
 
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button type="button" onclick="closeModal('modal-interaction')"
-                        style="background:#ccc; border:none; padding:10px 15px; border-radius:6px; cursor:pointer;">Cancelar</button>
-                    <button type="submit"
-                        style="background:#000; color:#fff; border:none; padding:10px 15px; border-radius:6px; cursor:pointer;">Registrar</button>
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost" onclick="closeModal('modal-interaction')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Registrar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="js/crm.js"></script>
+    <script type="module" src="/js/crm.js"></script>
 </body>
 
 </html>
