@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<link rel="icon" href="/assets/android-chrome-192x192-CLDb5g7w.png" type="android-chrome-192x192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saída de Estoque - Atelier Débora Freitas</title>
+  <style>
+    body {
+      font-family: 'Playfair Display', serif;
+      background-color: #0d2d0e;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1, h2 {
+      color: #c7a17a;
+    }
+    input, select, button {
+      margin: 0.5rem;
+      padding: 0.6rem;
+      border-radius: 4px;
+      border: none;
+    }
+    select, input {
+      width: 220px;
+    }
+    button {
+      background-color: #c7a17a;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a87b51;
+    }
+    .voltar {
+      margin-top: 2rem;
+      display: inline-block;
+      padding: 10px 20px;
+      background: #c7a17a;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .voltar:hover {
+      background: #a87b51;
+    }
+    table {
+      margin: 2rem auto;
+      border-collapse: collapse;
+      background: white;
+      color: black;
+      width: 90%;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #c7a17a;
+      color: white;
+    }
+  </style>
+  <script>
+    let produtosMap = {};
+    let historicoCompleto = [];
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return window.location = 'index.html';
+      carregarProdutos();
+      carregarHistorico();
+    });
+
+    function carregarProdutos() {
+      const select = document.getElementById('produto');
+      const filtroSelect = document.getElementById('filtroProduto');
+      db.ref('produtos').once('value').then(snap => {
+        select.innerHTML = '<option value="">Selecione</option>';
+        filtroSelect.innerHTML = '<option value="">Todos</option>';
+        snap.forEach(p => {
+          const id = p.key;
+          const d = p.val();
+          produtosMap[id] = d;
+          select.innerHTML += `<option value="${id}">${d.nome} (Estoque: ${d.estoque})</option>`;
+          filtroSelect.innerHTML += `<option value="${d.nome}">${d.nome}</option>`;
+        });
+      });
+    }
+
+    function registrarSaida() {
+      const produtoId = document.getElementById('produto').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+      if (!produtoId || isNaN(quantidade)) return alert("Preencha os dados corretamente.");
+
+      const produto = produtosMap[produtoId];
+      if (quantidade > produto.estoque) return alert("Estoque insuficiente.");
+
+      const novoEstoque = produto.estoque - quantidade;
+      db.ref('produtos/' + produtoId).update({ estoque: novoEstoque });
+
+      const saidaId = db.ref('saidas').push().key;
+      db.ref('saidas/' + saidaId).set({
+        id: saidaId,
+        produtoId,
+        nome: produto.nome,
+        quantidade,
+        data: new Date().toLocaleString()
+      });
+
+      alert("Saída registrada com sucesso!");
+      carregarProdutos();
+      carregarHistorico();
+    }
+
+    function carregarHistorico() {
+      db.ref('saidas').once('value').then(snapshot => {
+        historicoCompleto = [];
+        snapshot.forEach(s => {
+          historicoCompleto.push(s.val());
+        });
+        aplicarFiltroHistorico();
+      });
+    }
+
+    function aplicarFiltroHistorico() {
+      const nomeFiltro = document.getElementById('filtroProduto').value;
+      const dataFiltro = document.getElementById('filtroData').value;
+      const corpo = document.getElementById('historico-saidas');
+      corpo.innerHTML = '';
+
+      const filtrado = historicoCompleto.filter(d => {
+        const matchNome = !nomeFiltro || d.nome === nomeFiltro;
+        const matchData = !dataFiltro || d.data.startsWith(dataFiltro);
+        return matchNome && matchData;
+      });
+
+      filtrado.forEach(d => {
+        corpo.innerHTML += `
+          <tr>
+            <td>${d.nome}</td>
+            <td>${d.quantidade}</td>
+            <td>${d.data}</td>
+            <td>
+              <button onclick="excluirSaida('${d.id}')">Excluir</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function excluirSaida(id) {
+      if (confirm("Deseja excluir esta saída?")) {
+        db.ref('saidas/' + id).remove();
+        carregarHistorico();
+      }
+    }
+
+    function exportarHistoricoCSV() {
+      let csv = 'Produto,Quantidade,Data\n';
+      historicoCompleto.forEach(d => {
+        csv += `${d.nome},${d.quantidade},${d.data}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'historico_saidas.csv');
+      a.click();
+    }
+  </script>
+  <script type="module" crossorigin src="/assets/firebase-config-B-BERLEw.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/firebase-config-C_NlqDS1.css">
+</head>
+<body>
+  <header>
+    <h1>Saída de Produtos</h1>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Registrar Baixa no Estoque</h2>
+    <select id="produto"></select>
+    <input type="number" id="quantidade" placeholder="Quantidade para saída">
+    <button onclick="registrarSaida()">Registrar Saída</button>
+    <br>
+    <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+
+    <h2>Histórico de Saídas</h2>
+    <div>
+      <input type="date" id="filtroData" onchange="aplicarFiltroHistorico()">
+      <select id="filtroProduto" onchange="aplicarFiltroHistorico()"></select>
+      <button onclick="exportarHistoricoCSV()">Exportar CSV</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Data</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="historico-saidas"></tbody>
+    </table>
+  </main>
+  <footer>
+    &copy; 2025 Atelier Débora Freitas
+  </footer>
+</body>
+</html>

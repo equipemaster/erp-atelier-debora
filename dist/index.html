@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/assets/android-chrome-192x192-CLDb5g7w.png" type="android-chrome-192x192.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Ateliê Débora Freitas</title>
+  
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .logo {
+      width: 400px;
+      height: 100px;
+      display: block;
+      margin-bottom: 20px;
+      object-fit: cover;
+    }
+
+    .login-box {
+      text-align: center;
+    }
+
+    input {
+      display: block;
+      width: 250px;
+      margin: 10px auto;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background-color: #c59d66;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 270px;
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 12px;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/main-BONXC5Te.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/firebase-config-B-BERLEw.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-DzVGNGfc.js">
+  <link rel="stylesheet" crossorigin href="/assets/firebase-config-C_NlqDS1.css">
+</head>
+<body>
+
+  <img src="/assets/logo-CUAV_1E2.jpeg" alt="Logo DF" class="logo">
+  <div class="login-box">
+  <form id="loginForm" method="post" onsubmit="return false;">
+    <h2>Login</h2>
+    <input type="email" name="email" placeholder="Email" autocomplete="email" required>
+    <input type="password" name="senha" placeholder="Senha" autocomplete="current-password" required>
+    <button type="submit">Entrar</button>
+  </form>
+    </div>
+    <footer>
+      © 2025 Ateliê Débora Freitas. Todos os direitos reservados.
+    </footer>
+  </div>
+
+
+</body>
+</html>

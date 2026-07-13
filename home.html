@@ -7,27 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Início - Atelier Débora Freitas</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="js/auth.js"></script> <!-- Assuming auth logic is here or inline below -->
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-      authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-      projectId: "erp-ateliedebora-275e7",
-      storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-      messagingSenderId: "375960061963",
-      appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-      measurementId: "G-ZTCE581F5W"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    auth.onAuthStateChanged(user => {
-      if (!user) window.location = 'index.html';
-    });
-
-    function logout() {
-      auth.signOut();
-    }
+  <script type="module">
+    import { checkAuth, logout } from './js/auth.js';
+    checkAuth();
+    window.logout = logout;
   </script>
 
   <style>
