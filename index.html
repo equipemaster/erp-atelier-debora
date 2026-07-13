@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Ateliê Débora Freitas</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   
   <style>
     body {
@@ -59,6 +57,7 @@
       font-size: 12px;
     }
   </style>
+  <script type="module" src="/js/firebase-config.js"></script>
 </head>
 <body>
 
@@ -76,33 +75,18 @@
     </footer>
   </div>
 
-<script>
-    const firebaseConfig = {
-  apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-  authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-  databaseURL: "https://erp-ateliedebora-275e7-default-rtdb.firebaseio.com",
-  projectId: "erp-ateliedebora-275e7",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    console.log(auth)
-     // Função de login com Firebase Auth (já existente)
-    async function login(email, senha) {
-      try {
-        await auth.signInWithEmailAndPassword(email, senha);
-        window.location = 'home.html';
-      } catch (e) {
-        alert('Erro no login: ' + e.message);
-      }
-    }
-
-    // Captura o evento de envio do formulário
+  <script type="module">
+    import { login, checkAuth } from './js/auth.js';
+    
+    // Se o user já estiver logado, ele deveria ir pra home? Podemos checar isso.
+    // checkAuth(); // Optional for index page: redirects to home if logged in.
+    
     const form = document.getElementById('loginForm');
     form.addEventListener('submit', function(event) {
-      event.preventDefault(); // Impede envio padrão
+      event.preventDefault();
       const email = form.email.value;
       const senha = form.senha.value;
-      login(email, senha); // Chama sua função
+      login(email, senha);
     });
   </script>
 

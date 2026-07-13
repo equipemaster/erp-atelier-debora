@@ -1,18 +1,10 @@
 /* CRM Specific Styles */
 
-:root {
-    --primary-color: #000;
-    --accent-color: #c7a17a;
-    /* Gold */
-    --bg-light: #f4f4f4;
-    --border-color: #ddd;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-}
-
+/* ----------------------------------------------------
+   LAYOUT PRINCIPAL E CONTAINERS (BEM-inspired Structure)
+------------------------------------------------------- */
 body {
-    background-color: #f9f9f9;
+    background-color: var(--bg-light);
 }
 
 /* CRM Layout */
@@ -60,7 +52,7 @@ body {
 }
 
 .search-input:focus {
-    border-color: var(--accent-color);
+    border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(199, 161, 122, 0.2);
 }
 
@@ -88,7 +80,7 @@ body {
 
 .client-card.active {
     background-color: #fff9f0;
-    border: 1px solid var(--accent-color);
+    border: 1px solid var(--accent);
 }
 
 .client-card h3 {
@@ -182,7 +174,7 @@ body {
 .client-title h2 {
     margin: 0;
     font-size: 1.8rem;
-    color: var(--primary-color);
+    color: var(--primary);
 }
 
 .client-actions button {
@@ -212,7 +204,7 @@ body {
 
 .info-group h3 {
     margin-top: 0;
-    color: var(--accent-color);
+    color: var(--accent);
     font-size: 1.1rem;
     border-bottom: 1px solid #eaeaea;
     padding-bottom: 10px;
@@ -255,7 +247,7 @@ body {
 .measurement-box strong {
     display: block;
     font-size: 1.1rem;
-    color: var(--primary-color);
+    color: var(--primary);
 }
 
 /* Interaction Timeline */
@@ -286,7 +278,7 @@ body {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--accent-color);
+    background: var(--accent);
     border: 2px solid #fff;
     box-shadow: 0 0 0 2px #eee;
 }
@@ -329,7 +321,7 @@ body {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--primary-color);
+    background: var(--primary);
     color: white;
     justify-content: center;
     align-items: center;

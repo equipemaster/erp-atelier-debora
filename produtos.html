@@ -8,10 +8,6 @@
   <title>Cadastro de Produtos - Ateliê Débora Freitas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     crossorigin="anonymous" />
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
   <!-- Design System -->
   <link rel="stylesheet" href="css/style.css" />
@@ -210,6 +206,7 @@
       color: #333;
     }
   </style>
+  <script type="module" src="/js/firebase-config.js"></script>
 </head>
 
 <body>
@@ -267,18 +264,6 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDHWdwZ-SyOZjvUv9blUv1m70m5CvaOs8o",
-      authDomain: "erp-ateliedebora-275e7.firebaseapp.com",
-      projectId: "erp-ateliedebora-275e7",
-      storageBucket: "erp-ateliedebora-275e7.firebasestorage.app",
-      messagingSenderId: "375960061963",
-      appId: "1:375960061963:web:ca29e2881ad03c3a2b1f0e",
-      measurementId: "G-ZTCE581F5W"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
     const storage = firebase.storage();
 
     let produtosCarregados = [];

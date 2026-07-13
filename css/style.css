@@ -6,15 +6,24 @@
   /* Subtle White to Silver Gradient for "Technological" feel */
   --bg-gradient: linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%);
 
-  /* Primary Action: Gradient Black (Matches Logo) */
+  /* Main Colors */
   --primary: #000000;
   --primary-gradient: linear-gradient(135deg, #000000 0%, #333333 100%);
   --primary-hover: linear-gradient(135deg, #333333 0%, #555555 100%);
+  --accent: #c7a17a;
+  
+  /* Status Colors */
+  --success: #28a745;
+  --warning: #ffc107;
+  --error: #d9534f;
+  --info: #17a2b8;
 
-  /* Surface: Crisp White */
+  /* Surface & Background */
   --surface: rgba(255, 255, 255, 0.9);
   --surface-border: rgba(0, 0, 0, 0.1);
+  --bg-light: #f4f4f4;
 
+  /* Typography */
   --text: #1a1a1a;
   --text-muted: #666666;
   --text-inverse: #ffffff;
@@ -58,6 +67,7 @@ h6 {
 h1 {
   /* Title on Black Background -> Gold or White */
   background: linear-gradient(to right, #d4af37, #f3cca0);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
