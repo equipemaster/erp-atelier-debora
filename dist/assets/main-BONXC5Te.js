@@ -1,1 +1,0 @@
-import{n as e}from"./auth-DzVGNGfc.js";import"./firebase-config-B-BERLEw.js";var t=document.getElementById(`loginForm`);t.addEventListener(`submit`,function(n){n.preventDefault();let r=t.email.value,i=t.senha.value;e(r,i)});
