@@ -276,16 +276,16 @@
     </table>
   </div>
 
-  <script>
-    // Firebase Config
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+  <script type="module">
+    import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+    import { onAuthStateChanged } from 'firebase/auth';
+    import { auth, db } from './js/firebase-config.js';
 
     let transacoes = [];
     let chartFin = null;
     let chartMix = null;
 
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (!user) {
         window.location = "index.html";
       } else {
@@ -294,7 +294,7 @@
     });
 
     function carregarDados() {
-      db.collection("transacoes").orderBy("timestamp", "desc").get().then(snap => {
+      getDocs(query(collection(db, "transacoes"), orderBy("timestamp", "desc"))).then(snap => {
         transacoes = [];
         snap.forEach(doc => {
           const d = doc.data();
@@ -423,6 +423,10 @@
         options: { responsive: true, plugins: { legend: { display: false } } }
       });
     }
+
+    // Script de módulo: funções chamadas via onclick inline no HTML
+    // precisam ser expostas explicitamente no escopo global.
+    window.aplicarFiltros = aplicarFiltros;
   </script>
 </body>
 

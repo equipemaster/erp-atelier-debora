@@ -424,13 +424,15 @@
         </div>
     </div>
 
-    <script>
-        // Firebase Config
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+    <script type="module">
+        import {
+            collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, serverTimestamp
+        } from 'firebase/firestore';
+        import { onAuthStateChanged } from 'firebase/auth';
+        import { auth, db } from './js/firebase-config.js';
 
         // Auth Check
-        auth.onAuthStateChanged(user => {
+        onAuthStateChanged(auth, user => {
             if (!user) window.location = 'index.html';
         });
 
@@ -473,7 +475,7 @@
             selectVestidoVenda.innerHTML = '<option value="">Selecione o Vestido</option>';
 
             try {
-                const snap = await db.collection('vestidos').where('status', '==', 'disponível').get();
+                const snap = await getDocs(query(collection(db, 'vestidos'), where('status', '==', 'disponível')));
                 listaDisponiveis.innerHTML = '';
 
                 if (snap.empty) {
@@ -532,7 +534,7 @@
         // 2. Load Returnables (Alugados)
         async function loadDevolucoes() {
             selectVestidoDevolucao.innerHTML = '<option value="">Selecione para Devolução</option>';
-            const snap = await db.collection('vestidos').where('status', '==', 'alugado').get();
+            const snap = await getDocs(query(collection(db, 'vestidos'), where('status', '==', 'alugado')));
             snap.forEach(doc => {
                 const d = doc.data();
                 const opt = document.createElement('option');
@@ -545,10 +547,10 @@
         // 3. Load History
         async function loadHistorico(filters = {}) {
             listaHistorico.innerHTML = '<p style="padding:10px;text-align:center;">Carregando...</p>';
-            let query = db.collection('transacoes').orderBy('timestamp', 'desc');
+            const q = query(collection(db, 'transacoes'), orderBy('timestamp', 'desc'));
 
             try {
-                const snap = await query.get();
+                const snap = await getDocs(q);
                 listaHistorico.innerHTML = '';
 
                 const allDocs = snap.docs.map(d => d.data());
@@ -597,13 +599,13 @@
             e.preventDefault();
             const f = e.target;
             try {
-                await db.collection('vestidos').add({
+                await addDoc(collection(db, 'vestidos'), {
                     nome: f.nome.value,
                     codigo: f.codigo.value,
                     valorVenda: f.valorVenda.value,
                     valorAluguel: f.valorAluguel.value,
                     status: 'disponível',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: serverTimestamp()
                 });
                 showMessage('msg-cadastro-sucesso');
                 f.reset();
@@ -625,8 +627,8 @@
 
             try {
                 // Get Vestido Name
-                const vDoc = await db.collection('vestidos').doc(vestidoId).get();
-                if (!vDoc.exists) throw new Error('Vestido não existe');
+                const vDoc = await getDoc(doc(db, 'vestidos', vestidoId));
+                if (!vDoc.exists()) throw new Error('Vestido não existe');
                 const vData = vDoc.data();
 
                 const transactionData = {
@@ -639,16 +641,16 @@
                     valor: f.valor.value,
                     formaPagamento: f.formaPagamento.value,
                     data: new Date().toLocaleDateString('pt-BR'),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: serverTimestamp(),
                     parcelas: (f.formaPagamento.value === 'cartao_credito') ? f.parcelas.value : null
                 };
 
                 // Save Transaction
-                await db.collection('transacoes').add(transactionData);
+                await addDoc(collection(db, 'transacoes'), transactionData);
 
                 // Update Vestido Status
                 const newStatus = tipo === 'aluguel' ? 'alugado' : 'vendido';
-                await db.collection('vestidos').doc(vestidoId).update({ status: newStatus });
+                await updateDoc(doc(db, 'vestidos', vestidoId), { status: newStatus });
 
                 showMessage('msg-venda-sucesso');
                 f.reset();
@@ -669,7 +671,7 @@
             if (!vid) return alert('Selecione o vestido');
 
             try {
-                await db.collection('vestidos').doc(vid).update({ status: 'disponível' });
+                await updateDoc(doc(db, 'vestidos', vid), { status: 'disponível' });
                 showMessage('msg-devolucao-sucesso');
                 e.target.reset();
                 loadVestidos();
@@ -684,7 +686,7 @@
         window.deleteVestido = async (id, nome) => {
             if (!confirm(`Excluir o vestido "${nome}"?`)) return;
             try {
-                await db.collection('vestidos').doc(id).delete();
+                await deleteDoc(doc(db, 'vestidos', id));
                 loadVestidos();
             } catch (err) {
                 alert('Erro ao excluir: ' + err.message);
@@ -715,7 +717,7 @@
             const aluguel = document.getElementById('edit-aluguel').value;
 
             try {
-                await db.collection('vestidos').doc(id).update({
+                await updateDoc(doc(db, 'vestidos', id), {
                     nome: nome,
                     codigo: codigo,
                     valorVenda: venda,

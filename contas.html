@@ -380,15 +380,19 @@
   </div>
 
   <!-- Logic Script -->
-  <script>
+  <script type="module">
+    import { ref, get, set, update, remove, push } from 'firebase/database';
+    import { onAuthStateChanged } from 'firebase/auth';
+    import { auth, database as db } from './js/firebase-config.js';
+
     let contasTotais = [];
     let saidasAvulsasTotais = [];
     let historicoPagamentosTotais = [];
     let graficoContas = null;
     let currentInitialBalance = 0;
 
-    auth.onAuthStateChanged(user => {
-      if (!user) { }
+    onAuthStateChanged(auth, user => {
+      if (!user) return window.location = 'index.html';
       loadInitialBalance();
       carregarContas();
       carregarHistoricoPagamentos();
@@ -399,7 +403,7 @@
       const val = parseFloat(document.getElementById('manualInitialBalance').value);
       if (isNaN(val)) return alert('Valor inválido');
 
-      db.ref('settings/initialBalance').set(val).then(() => {
+      set(ref(db, 'settings/initialBalance'), val).then(() => {
         currentInitialBalance = val;
         document.getElementById('saldoInicialManual').textContent = `Saldo Informado: R$ ${val.toFixed(2)}`;
         document.getElementById('manualInitialBalance').value = '';
@@ -409,7 +413,7 @@
     }
 
     function loadInitialBalance() {
-      db.ref('settings/initialBalance').once('value').then(snap => {
+      get(ref(db, 'settings/initialBalance')).then(snap => {
         const val = snap.val();
         if (typeof val === 'number') {
           currentInitialBalance = val;
@@ -448,8 +452,8 @@
 
       if (!desc || isNaN(val)) return alert('Preencha os campos');
 
-      const id = db.ref(`contas/${tipo}`).push().key;
-      db.ref(`contas/${tipo}/${id}`).set({ id, descricao: desc, valor: val, tipo, data }).then(() => {
+      const id = push(ref(db, `contas/${tipo}`)).key;
+      set(ref(db, `contas/${tipo}/${id}`), { id, descricao: desc, valor: val, tipo, data }).then(() => {
         document.getElementById('descricaoConta').value = '';
         document.getElementById('valorConta').value = '';
         carregarContas();
@@ -463,8 +467,8 @@
 
       if (!desc || isNaN(val)) return alert('Preencha os campos');
 
-      const id = db.ref('saidasAvulsas').push().key;
-      db.ref(`saidasAvulsas/${id}`).set({ id, descricao: desc, valor: val, data }).then(() => {
+      const id = push(ref(db, 'saidasAvulsas')).key;
+      set(ref(db, `saidasAvulsas/${id}`), { id, descricao: desc, valor: val, data }).then(() => {
         document.getElementById('descricaoSaida').value = '';
         document.getElementById('valorSaida').value = '';
         carregarContas();
@@ -475,19 +479,19 @@
       if (tipo !== 'pagar') return;
       if (!confirm('Confirmar pagamento? Moverá para o histórico.')) return;
 
-      db.ref(`contas/${tipo}/${id}`).once('value').then(snap => {
+      get(ref(db, `contas/${tipo}/${id}`)).then(snap => {
         const conta = snap.val();
         if (conta) {
           const dataPag = new Date().toISOString().split('T')[0];
-          const histId = db.ref('historicoPagamentos').push().key;
-          db.ref(`historicoPagamentos/${histId}`).set({
+          const histId = push(ref(db, 'historicoPagamentos')).key;
+          set(ref(db, `historicoPagamentos/${histId}`), {
             idOriginal: conta.id,
             descricao: conta.descricao,
             valor: conta.valor,
             dataVencimentoOriginal: conta.data,
             dataPagamento: dataPag
           }).then(() => {
-            return db.ref(`contas/${tipo}/${id}`).remove();
+            return remove(ref(db, `contas/${tipo}/${id}`));
           }).then(() => {
             carregarContas();
             carregarHistoricoPagamentos();
@@ -536,16 +540,16 @@
           }
 
           if (val < 0) {
-            const id = db.ref('saidasAvulsas').push().key;
-            db.ref(`saidasAvulsas/${id}`).set({
+            const id = push(ref(db, 'saidasAvulsas')).key;
+            set(ref(db, `saidasAvulsas/${id}`), {
               id,
               descricao: `[IMP] ${desc}`,
               valor: Math.abs(val),
               data: dateISO
             });
           } else {
-            const id = db.ref('contas/receber').push().key;
-            db.ref(`contas/receber/${id}`).set({
+            const id = push(ref(db, 'contas/receber')).key;
+            set(ref(db, `contas/receber/${id}`), {
               id,
               descricao: `[IMP] ${desc}`,
               valor: val,
@@ -577,9 +581,9 @@
       saidasAvulsasTotais = [];
 
       Promise.all([
-        db.ref('contas/pagar').once('value'),
-        db.ref('contas/receber').once('value'),
-        db.ref('saidasAvulsas').once('value')
+        get(ref(db, 'contas/pagar')),
+        get(ref(db, 'contas/receber')),
+        get(ref(db, 'saidasAvulsas'))
       ]).then(([snapPagar, snapReceber, snapSaidas]) => {
         snapPagar.forEach(c => { contasTotais.push({ ...c.val(), id: c.key }); });
         snapReceber.forEach(c => { contasTotais.push({ ...c.val(), id: c.key }); });
@@ -632,7 +636,7 @@
       tbody.innerHTML = '';
       historicoPagamentosTotais = [];
 
-      db.ref('historicoPagamentos').once('value').then(snap => {
+      get(ref(db, 'historicoPagamentos')).then(snap => {
         snap.forEach(i => {
           const d = i.val();
           d.id = i.key;
@@ -717,12 +721,12 @@
     // --- CRUD Wrappers ---
     function editarConta(tipo, id) {
       const path = tipo === 'saidaAvulsa' ? `saidasAvulsas/${id}` : `contas/${tipo}/${id}`;
-      db.ref(path).once('value').then(snap => {
+      get(ref(db, path)).then(snap => {
         const d = snap.val();
         const newDesc = prompt('Descrição:', d.descricao);
         const newVal = prompt('Valor:', d.valor);
         if (newDesc && newVal) {
-          db.ref(path).update({ descricao: newDesc, valor: parseFloat(newVal) }).then(carregarContas);
+          update(ref(db, path), { descricao: newDesc, valor: parseFloat(newVal) }).then(carregarContas);
         }
       });
     }
@@ -730,12 +734,12 @@
     function excluirConta(tipo, id) {
       if (!confirm('Excluir?')) return;
       const path = tipo === 'saidaAvulsa' ? `saidasAvulsas/${id}` : `contas/${tipo}/${id}`;
-      db.ref(path).remove().then(carregarContas);
+      remove(ref(db, path)).then(carregarContas);
     }
 
     function excluirPagamentoHistorico(id) {
       if (!confirm('Excluir do histórico?')) return;
-      db.ref(`historicoPagamentos/${id}`).remove().then(carregarHistoricoPagamentos);
+      remove(ref(db, `historicoPagamentos/${id}`)).then(carregarHistoricoPagamentos);
     }
 
     function exportarCSV() {
@@ -751,6 +755,21 @@
       a.download = 'financeiro.csv';
       a.click();
     }
+
+    // Script de módulo: funções chamadas via onclick/onchange/oninput inline no HTML
+    // precisam ser expostas explicitamente no escopo global.
+    window.saveInitialBalance = saveInitialBalance;
+    window.registrarConta = registrarConta;
+    window.registrarSaidaAvulsa = registrarSaidaAvulsa;
+    window.importarExtrato = importarExtrato;
+    window.exportarCSV = exportarCSV;
+    window.filtrarContas = filtrarContas;
+    window.filtrarHistorico = filtrarHistorico;
+    window.limparFiltrosHistorico = limparFiltrosHistorico;
+    window.informarPagamento = informarPagamento;
+    window.editarConta = editarConta;
+    window.excluirConta = excluirConta;
+    window.excluirPagamentoHistorico = excluirPagamentoHistorico;
   </script>
 </body>
 

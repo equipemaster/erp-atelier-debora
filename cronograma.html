@@ -204,13 +204,15 @@
     <!-- Grid -->
     <div class="schedule-grid" id="scheduleGrid"></div>
 
-    <script>
-        const auth = firebase.auth();
+    <script type="module">
+        import { ref, get, onValue, set, remove, update } from 'firebase/database';
+        import { onAuthStateChanged } from 'firebase/auth';
+        import { auth, database as db } from './js/firebase-config.js';
 
         let allProjects = {};
         let currentWeekDays = [];
 
-        auth.onAuthStateChanged(user => {
+        onAuthStateChanged(auth, user => {
             if (user) {
                 initPage();
             }
@@ -255,7 +257,7 @@
         }
 
         function loadProjects() {
-            db.ref('projetos').on('value', snap => {
+            onValue(ref(db, 'projetos'), snap => {
                 allProjects = snap.val() || {};
                 populateProjectDropdown();
                 renderSchedule();
@@ -287,14 +289,14 @@
             if (!projId || !dateStr) return alert('Selecione projeto e dia!');
 
             // Save visual schedule date
-            db.ref(`projetos/${projId}/dataAgendada`).set(dateStr).then(() => {
+            set(ref(db, `projetos/${projId}/dataAgendada`), dateStr).then(() => {
                 alert('Agendado com sucesso!');
             });
         }
 
         function limparAgendamento(id) {
             if (confirm('Remover do dia agendado? Voltarpa para data original.')) {
-                db.ref(`projetos/${id}/dataAgendada`).remove();
+                remove(ref(db, `projetos/${id}/dataAgendada`));
             }
         }
 
@@ -366,9 +368,9 @@
         async function concluirProjeto(id) {
             if (!confirm('Deseja marcar este projeto como FINALIZADO? Ele sairá do cronograma.')) return;
 
-            const ref = db.ref('projetos/' + id);
+            const projRef = ref(db, 'projetos/' + id);
             try {
-                const snap = await ref.once('value');
+                const snap = await get(projRef);
                 const p = snap.val();
                 if (!p) return;
 
@@ -385,7 +387,7 @@
                 // Add Finalizado
                 etapas.push({ nome: 'Finalizado', inicio: Date.now(), fim: null });
 
-                await ref.update({
+                await update(projRef, {
                     statusAtual: 'Finalizado',
                     etapas: etapas
                 });
@@ -396,6 +398,12 @@
                 alert('Erro ao finalizar projeto.');
             }
         }
+
+        // Script de módulo: funções chamadas via onclick inline no HTML
+        // precisam ser expostas explicitamente no escopo global.
+        window.agendarProjeto = agendarProjeto;
+        window.limparAgendamento = limparAgendamento;
+        window.concluirProjeto = concluirProjeto;
     </script>
 </body>
 

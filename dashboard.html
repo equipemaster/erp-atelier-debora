@@ -176,17 +176,16 @@
 
   <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
 
-  <script>
+  <script type="module">
+    import { ref, get } from 'firebase/database';
+    import { database as db } from './js/firebase-config.js';
+    import { checkAuth, logout } from './js/auth.js';
+
     // Use DataLabels Plugin
     Chart.register(ChartDataLabels);
 
-    auth.onAuthStateChanged(user => {
-      if (!user) window.location = 'index.html';
-    });
-
-    function logout() {
-      auth.signOut();
-    }
+    checkAuth();
+    window.logout = logout;
 
     // Global Chart Data
     let chartInstance = null;
@@ -194,7 +193,7 @@
     let originalData = [];
     let currentIndex = -1; // -1 means all
 
-    db.ref('produtos').once('value').then(snapshot => {
+    get(ref(db, 'produtos')).then(snapshot => {
       if (snapshot.exists()) {
         snapshot.forEach(p => {
           const d = p.val();
@@ -338,6 +337,10 @@
         }
       });
     }
+
+    // Script de módulo: funções chamadas via onclick inline no HTML
+    // precisam ser expostas explicitamente no escopo global.
+    window.resetFilter = resetFilter;
   </script>
 </body>
 

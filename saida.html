@@ -65,11 +65,15 @@
       color: white;
     }
   </style>
-  <script>
+  <script type="module">
+    import { ref, get, update, push, set, remove } from 'firebase/database';
+    import { onAuthStateChanged } from 'firebase/auth';
+    import { auth, database as db } from './js/firebase-config.js';
+
     let produtosMap = {};
     let historicoCompleto = [];
 
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (!user) return window.location = 'index.html';
       carregarProdutos();
       carregarHistorico();
@@ -78,7 +82,7 @@
     function carregarProdutos() {
       const select = document.getElementById('produto');
       const filtroSelect = document.getElementById('filtroProduto');
-      db.ref('produtos').once('value').then(snap => {
+      get(ref(db, 'produtos')).then(snap => {
         select.innerHTML = '<option value="">Selecione</option>';
         filtroSelect.innerHTML = '<option value="">Todos</option>';
         snap.forEach(p => {
@@ -100,10 +104,10 @@
       if (quantidade > produto.estoque) return alert("Estoque insuficiente.");
 
       const novoEstoque = produto.estoque - quantidade;
-      db.ref('produtos/' + produtoId).update({ estoque: novoEstoque });
+      update(ref(db, 'produtos/' + produtoId), { estoque: novoEstoque });
 
-      const saidaId = db.ref('saidas').push().key;
-      db.ref('saidas/' + saidaId).set({
+      const saidaId = push(ref(db, 'saidas')).key;
+      set(ref(db, 'saidas/' + saidaId), {
         id: saidaId,
         produtoId,
         nome: produto.nome,
@@ -117,7 +121,7 @@
     }
 
     function carregarHistorico() {
-      db.ref('saidas').once('value').then(snapshot => {
+      get(ref(db, 'saidas')).then(snapshot => {
         historicoCompleto = [];
         snapshot.forEach(s => {
           historicoCompleto.push(s.val());
@@ -153,7 +157,7 @@
 
     function excluirSaida(id) {
       if (confirm("Deseja excluir esta saída?")) {
-        db.ref('saidas/' + id).remove();
+        remove(ref(db, 'saidas/' + id));
         carregarHistorico();
       }
     }
@@ -170,6 +174,13 @@
       a.setAttribute('download', 'historico_saidas.csv');
       a.click();
     }
+
+    // Script de módulo: funções chamadas via onclick/onchange inline no HTML
+    // precisam ser expostas explicitamente no escopo global.
+    window.registrarSaida = registrarSaida;
+    window.aplicarFiltroHistorico = aplicarFiltroHistorico;
+    window.excluirSaida = excluirSaida;
+    window.exportarHistoricoCSV = exportarHistoricoCSV;
   </script>
   <script type="module" src="/js/firebase-config.js"></script>
 </head>

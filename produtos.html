@@ -263,15 +263,18 @@
       Voltar ao Menu</a>
   </div>
 
-  <script>
-    const storage = firebase.storage();
+  <script type="module">
+    import { ref, get, set, remove, push } from 'firebase/database';
+    import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+    import { onAuthStateChanged } from 'firebase/auth';
+    import { auth, database as db, storage } from './js/firebase-config.js';
 
     let produtosCarregados = [];
     let paginaAtual = 1;
     const itensPorPagina = 5;
     let idParaExcluir = null;
 
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (!user) window.location = 'index.html';
     });
 
@@ -285,13 +288,13 @@
 
       if (!nome || isNaN(estoque) || !categoria) return alert('Preencha todos os campos!');
 
-      const id = db.ref('produtos').push().key;
+      const id = push(ref(db, 'produtos')).key;
       const produtoData = { id, nome, estoque, unidade, categoria, descricao, imagemURL: '' };
 
       if (file) {
-        const storageRef = storage.ref(`produtos/${id}/${file.name}`);
-        storageRef.put(file).then(snapshot =>
-          snapshot.ref.getDownloadURL().then(url => {
+        const fileRef = storageRef(storage, `produtos/${id}/${file.name}`);
+        uploadBytes(fileRef, file).then(snapshot =>
+          getDownloadURL(snapshot.ref).then(url => {
             produtoData.imagemURL = url;
             salvarProduto(id, produtoData);
           })
@@ -302,7 +305,7 @@
     }
 
     function salvarProduto(id, data) {
-      db.ref('produtos/' + id).set(data).then(() => {
+      set(ref(db, 'produtos/' + id), data).then(() => {
         alert('Produto cadastrado com sucesso!');
         document.querySelectorAll('#nomeProduto, #estoqueProduto, #categoriaProduto, #descricaoProduto').forEach(el => el.value = '');
         document.getElementById('imagemProduto').value = '';
@@ -322,14 +325,14 @@
 
     function confirmarExclusao() {
       if (idParaExcluir) {
-        db.ref('produtos/' + idParaExcluir).remove();
+        remove(ref(db, 'produtos/' + idParaExcluir));
         fecharModal();
         carregarProdutos();
       }
     }
 
     function carregarProdutos() {
-      db.ref('produtos').once('value').then(s => {
+      get(ref(db, 'produtos')).then(s => {
         produtosCarregados = [];
         s.forEach(p => {
           produtosCarregados.push(p.val());
@@ -397,6 +400,15 @@
       document.getElementById('filtroNome').addEventListener('input', aplicarFiltros);
       document.getElementById('filtroEstoque').addEventListener('input', aplicarFiltros);
     };
+
+    // Script de módulo: funções chamadas via onclick inline no HTML
+    // precisam ser expostas explicitamente no escopo global.
+    window.cadastrarProduto = cadastrarProduto;
+    window.exportarCSV = exportarCSV;
+    window.abrirModal = abrirModal;
+    window.fecharModal = fecharModal;
+    window.confirmarExclusao = confirmarExclusao;
+    window.mudarPagina = mudarPagina;
   </script>
 
 </body>
