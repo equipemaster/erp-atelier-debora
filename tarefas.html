@@ -289,6 +289,16 @@
 
     .concluida-toggle input { width: auto; margin: 0; }
 
+    /* ".modal-box label" (rótulos dos campos) tem mais especificidade que uma única
+       classe e "vaza" para estes labels-checkbox; sobrescreve explicitamente aqui. */
+    .modal-box .checklist-item,
+    .modal-box .concluida-toggle {
+      text-transform: none;
+      letter-spacing: normal;
+      color: inherit;
+      margin-top: 0;
+    }
+
     .checklist-metas {
       display: flex;
       flex-direction: column;
@@ -311,19 +321,7 @@
     }
 
     .checklist-item input { width: auto; margin: 2px 0 0; flex-shrink: 0; }
-
-    .checklist-item .checklist-data {
-      display: block;
-      color: var(--text-muted);
-      font-size: 0.62rem;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .checklist-item.hoje { border-color: var(--accent); background: #fff8ef; }
-    .checklist-item.hoje .checklist-data { color: var(--accent); font-weight: 700; }
-    .checklist-item.atrasada { border-color: #e3a3a3; background: #fff5f5; }
-    .checklist-item.atrasada .checklist-data { color: #a33; font-weight: 700; }
+    .checklist-item.feito { opacity: 0.55; text-decoration: line-through; }
 
     /* Modais */
     .modal-overlay {
@@ -369,10 +367,6 @@
     .metas-secao { margin-top: 14px; border-top: 1px solid #eee; padding-top: 12px; }
     .metas-secao h4 { margin: 0 0 4px; font-size: 0.85rem; }
     .metas-hint { margin: 0 0 8px; font-size: 0.75rem; color: var(--text-muted); }
-    .meta-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
-    .meta-row input[type="date"] { width: 150px; margin: 0; flex-shrink: 0; }
-    .meta-row input[type="checkbox"] { width: auto; margin: 0; }
-    .meta-row button { padding: 4px 8px; font-size: 0.7rem; }
 
     .concluida-secao { margin-top: 14px; }
 
@@ -461,16 +455,14 @@
         </div>
         <div class="full">
           <label for="atribObservacoes">Observações</label>
-          <textarea id="atribObservacoes" rows="2" placeholder="Detalhes do que precisa ser feito nesta etapa"></textarea>
+          <textarea id="atribObservacoes" rows="4" placeholder="Digite cada tarefa em uma linha. Cada linha vira um item da checklist." oninput="atualizarChecklistPreview()"></textarea>
         </div>
       </div>
 
       <div class="metas-secao">
-        <h4>Metas diárias (para garantir a entrega no prazo)</h4>
-        <p class="metas-hint">A descrição de cada meta diária é sempre o texto do campo Observações acima.</p>
-        <div id="metasContainer"></div>
-        <button type="button" class="btn-secundario" onclick="gerarMetasAutomaticas()">⚡ Gerar metas automaticamente</button>
-        <button type="button" class="btn-secundario" onclick="adicionarLinhaMeta()">+ Adicionar meta</button>
+        <h4>Checklist</h4>
+        <p class="metas-hint">Cada linha digitada em Observações vira um item marcável abaixo.</p>
+        <div id="checklistPreview" class="checklist-metas"></div>
       </div>
 
       <div class="concluida-secao">
@@ -535,6 +527,7 @@
 
     // Contexto da atribuição aberta no modal no momento
     let atribuicaoAtual = { projetoId: null, etapa: null };
+    let checklistTemp = []; // [{texto, concluida}] — espelha as linhas do campo Observações
 
     let notificadosSet = new Set(JSON.parse(sessionStorage.getItem('tarefas_notificados') || '[]'));
 
@@ -698,8 +691,8 @@
       document.getElementById('atribObservacoes').value = atrib?.observacoes || '';
       document.getElementById('atribConcluida').checked = !!atrib?.concluida;
 
-      document.getElementById('metasContainer').innerHTML = '';
-      (atrib?.metas || []).forEach(m => adicionarLinhaMeta(m.data, m.concluida));
+      checklistTemp = Array.isArray(atrib?.checklist) ? [...atrib.checklist] : [];
+      renderChecklistPreview();
 
       document.getElementById('btnRemoverAtribuicao').style.display = atrib ? 'inline-block' : 'none';
       document.getElementById('modalAtribuicao').style.display = 'flex';
@@ -710,47 +703,36 @@
       atribuicaoAtual = { projetoId: null, etapa: null };
     }
 
-    function adicionarLinhaMeta(data = '', concluida = false) {
-      const container = document.getElementById('metasContainer');
-      const row = document.createElement('div');
-      row.className = 'meta-row';
-      row.innerHTML = `
-        <input type="checkbox" class="meta-concluida" ${concluida ? 'checked' : ''}>
-        <input type="date" class="meta-data" value="${data}">
-        <button type="button" class="btn-icon" title="Remover meta" onclick="this.parentElement.remove()">✖</button>
-      `;
-      container.appendChild(row);
+    // Cada linha não vazia digitada em Observações vira um item de checklist.
+    // Ao editar o texto, preserva o estado (concluída) dos itens cujo texto não mudou.
+    function linhasDeObservacoes(texto) {
+      return String(texto || '').split('\n').map(l => l.trim()).filter(Boolean);
     }
 
-    function gerarMetasAutomaticas() {
-      const { projetoId } = atribuicaoAtual;
-      const projeto = projetosCache[projetoId];
-      const inicio = document.getElementById('atribInicio').value;
-      const entrega = projeto?.dataEntrega;
-      if (!inicio || !entrega) return showToast('Defina a data de início e garanta que o projeto tem data de entrega.', 'error');
-
-      const dIni = new Date(inicio + 'T00:00:00');
-      const dFim = new Date(entrega + 'T00:00:00');
-      if (dFim < dIni) return showToast('A data de entrega do projeto é anterior à data de início.', 'error');
-
-      document.getElementById('metasContainer').innerHTML = '';
-      const atual = new Date(dIni);
-      let count = 0;
-      while (atual <= dFim && count < 60) {
-        if (atual.getDay() !== 0) { // pula domingo
-          adicionarLinhaMeta(atual.toISOString().slice(0, 10), false);
-        }
-        atual.setDate(atual.getDate() + 1);
-        count++;
-      }
-      showToast('Metas diárias geradas.');
+    function atualizarChecklistPreview() {
+      const linhas = linhasDeObservacoes(document.getElementById('atribObservacoes').value);
+      checklistTemp = linhas.map(texto => {
+        const existente = checklistTemp.find(c => c.texto === texto);
+        return { texto, concluida: existente ? existente.concluida : false };
+      });
+      renderChecklistPreview();
     }
 
-    function coletarMetasDoForm() {
-      return Array.from(document.querySelectorAll('#metasContainer .meta-row')).map(row => ({
-        data: row.querySelector('.meta-data').value,
-        concluida: row.querySelector('.meta-concluida').checked
-      })).filter(m => m.data);
+    function renderChecklistPreview() {
+      const container = document.getElementById('checklistPreview');
+      container.innerHTML = checklistTemp.length === 0
+        ? '<p class="col-vazia" style="padding:0;">Digite os itens em Observações, um por linha</p>'
+        : checklistTemp.map((item, i) => `
+            <label class="checklist-item${item.concluida ? ' feito' : ''}">
+              <input type="checkbox" ${item.concluida ? 'checked' : ''} onchange="toggleChecklistPreview(${i})">
+              <span>${escapeHtml(item.texto)}</span>
+            </label>
+          `).join('');
+    }
+
+    function toggleChecklistPreview(i) {
+      checklistTemp[i].concluida = !checklistTemp[i].concluida;
+      renderChecklistPreview();
     }
 
     function salvarAtribuicao() {
@@ -775,7 +757,7 @@
         prioridade: document.getElementById('atribPrioridade').value,
         dataInicio: document.getElementById('atribInicio').value || null,
         observacoes: document.getElementById('atribObservacoes').value.trim(),
-        metas: coletarMetasDoForm(),
+        checklist: checklistTemp,
         concluida: document.getElementById('atribConcluida').checked,
         criadoEm: existente?.criadoEm || Date.now(),
         atualizadoEm: Date.now(),
@@ -802,11 +784,11 @@
       });
     }
 
-    function toggleMeta(chave, data) {
+    function toggleChecklistItem(chave, index) {
       const atrib = atribuicoesCache[chave];
-      if (!atrib || !Array.isArray(atrib.metas)) return;
-      const metas = atrib.metas.map(m => m.data === data ? { ...m, concluida: !m.concluida } : m);
-      update(ref(db, 'atribuicoes/' + chave), { metas, atualizadoEm: Date.now() }).catch(err => showToast('Erro: ' + err.message, 'error'));
+      if (!atrib || !Array.isArray(atrib.checklist) || !atrib.checklist[index]) return;
+      const checklist = atrib.checklist.map((c, i) => i === index ? { ...c, concluida: !c.concluida } : c);
+      update(ref(db, 'atribuicoes/' + chave), { checklist, atualizadoEm: Date.now() }).catch(err => showToast('Erro: ' + err.message, 'error'));
     }
 
     function toggleConcluida(chave) {
@@ -856,24 +838,23 @@
       return null;
     }
 
-    function metaHojePendente(atrib) {
-      if (!atrib || atrib.concluida || !Array.isArray(atrib.metas)) return false;
-      const hoje = hojeStr();
-      return atrib.metas.some(m => m.data === hoje && !m.concluida);
+    function temItensPendentes(atrib) {
+      if (!atrib || atrib.concluida || !Array.isArray(atrib.checklist)) return false;
+      return atrib.checklist.some(c => !c.concluida);
     }
 
     function renderAlertas() {
-      const semResponsavel = [], atrasadas = [], venceHoje = [], metasPendentes = [];
+      const semResponsavel = [], atrasadas = [], venceHoje = [], itensPendentes = [];
 
       listarEtapasAtivas().forEach(([id, projeto, etapa, atrib]) => {
         if (!atrib) { semResponsavel.push([id, projeto, etapa]); return; }
         const alerta = statusAlerta(atrib, projeto.dataEntrega);
         if (alerta === 'atrasado') atrasadas.push([id, projeto, etapa, atrib]);
         if (alerta === 'hoje') venceHoje.push([id, projeto, etapa, atrib]);
-        if (metaHojePendente(atrib)) metasPendentes.push([id, projeto, etapa, atrib]);
+        if (temItensPendentes(atrib)) itensPendentes.push([id, projeto, etapa, atrib]);
       });
 
-      const total = semResponsavel.length + atrasadas.length + venceHoje.length + metasPendentes.length;
+      const total = semResponsavel.length + atrasadas.length + venceHoje.length + itensPendentes.length;
       document.getElementById('alertasContador').textContent = total;
       document.getElementById('alertasBarra').style.display = total > 0 ? 'flex' : 'none';
 
@@ -881,14 +862,14 @@
         ['🆕 Aguardando atribuição', semResponsavel.map(([id, p, e]) => [id, p, e, `${p.nome} — ${e}`])],
         ['🔴 Atrasadas', atrasadas.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
         ['⏰ Vencem hoje', venceHoje.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
-        ['🔔 Metas de hoje pendentes', metasPendentes.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
+        ['🔔 Itens da checklist pendentes', itensPendentes.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
       ];
       document.getElementById('alertasPainel').innerHTML = secoes.filter(([, l]) => l.length > 0).map(([titulo, lista]) => `
         <h4>${titulo} (${lista.length})</h4>
         <ul>${lista.map(([id, p, e, texto]) => `<li onclick="verNoQuadro('${id}','${escapeHtml(e)}')">${escapeHtml(texto)}</li>`).join('')}</ul>
       `).join('') || '<p>Nenhum alerta no momento. 🎉</p>';
 
-      notificarNovosAlertas([...atrasadas, ...venceHoje, ...metasPendentes]);
+      notificarNovosAlertas([...atrasadas, ...venceHoje, ...itensPendentes]);
     }
 
     function verNoQuadro(projetoId, etapa) {
@@ -931,7 +912,7 @@
     function renderCard(projetoId, projeto, etapa, atrib) {
       const chave = chaveAtribuicao(projetoId, etapa);
       const alerta = statusAlerta(atrib, projeto.dataEntrega);
-      const metaPendente = metaHojePendente(atrib);
+      const itensPendentes = temItensPendentes(atrib);
       const prio = PRIORIDADES[atrib?.prioridade] || null;
       const dias = projeto.dataEntrega ? diasRestantes(projeto.dataEntrega) : null;
 
@@ -942,10 +923,8 @@
         badgeEntrega = `<span class="badge-prazo ${cls}">📅 ${formatDateBR(projeto.dataEntrega)} · ${label}</span>`;
       }
 
-      const totalMetas = atrib && Array.isArray(atrib.metas) ? atrib.metas.length : 0;
-      const metasFeitas = totalMetas > 0 ? atrib.metas.filter(m => m.concluida).length : 0;
-      const hoje = hojeStr();
-      const metasOrdenadas = totalMetas > 0 ? [...atrib.metas].sort((a, b) => a.data.localeCompare(b.data)) : [];
+      const checklist = atrib && Array.isArray(atrib.checklist) ? atrib.checklist : [];
+      const itensFeitos = checklist.filter(c => c.concluida).length;
 
       return `
         <div class="task-card ${atrib ? '' : 'sem-responsavel'}" onclick="abrirModalAtribuicao('${projetoId}','${etapa}')" style="border-left-color:${prio ? prio.cor : '#ccc'}">
@@ -957,7 +936,7 @@
           ${!atrib ? '<div class="alerta-linha alerta-sem-resp">🆕 Sem responsável</div>' : ''}
           ${alerta === 'atrasado' ? '<div class="alerta-linha alerta-atrasado">⚠️ Atrasada</div>' : ''}
           ${alerta === 'hoje' ? '<div class="alerta-linha alerta-hoje">⏰ Vence hoje</div>' : ''}
-          ${metaPendente ? '<div class="alerta-linha alerta-meta">🔔 Meta de hoje pendente</div>' : ''}
+          ${itensPendentes ? '<div class="alerta-linha alerta-meta">🔔 Checklist pendente</div>' : ''}
           ${atrib?.concluida ? '<div class="alerta-linha alerta-concluida">✅ Etapa concluída</div>' : ''}
 
           ${atrib ? `
@@ -971,19 +950,16 @@
 
           ${badgeEntrega}
 
-          ${totalMetas > 0 ? `
+          ${checklist.length > 0 ? `
             <div class="meta-progress">
-              <div class="meta-progress-bar"><div style="width:${Math.round(metasFeitas / totalMetas * 100)}%"></div></div>
-              <small>${metasFeitas}/${totalMetas} metas diárias</small>
+              <div class="meta-progress-bar"><div style="width:${Math.round(itensFeitos / checklist.length * 100)}%"></div></div>
+              <small>${itensFeitos}/${checklist.length} itens concluídos</small>
             </div>
             <div class="checklist-metas" onclick="event.stopPropagation()">
-              ${metasOrdenadas.map(m => `
-                <label class="checklist-item${m.data === hoje ? ' hoje' : ''}${(!m.concluida && m.data < hoje) ? ' atrasada' : ''}">
-                  <input type="checkbox" ${m.concluida ? 'checked' : ''} onchange="toggleMeta('${chave}','${m.data}')">
-                  <span>
-                    <span class="checklist-data">${formatDateBR(m.data)}${m.data === hoje ? ' · hoje' : ''}</span>
-                    ${escapeHtml(atrib.observacoes || 'Meta diária')}
-                  </span>
+              ${checklist.map((item, i) => `
+                <label class="checklist-item${item.concluida ? ' feito' : ''}">
+                  <input type="checkbox" ${item.concluida ? 'checked' : ''} onchange="toggleChecklistItem('${chave}', ${i})">
+                  <span>${escapeHtml(item.texto)}</span>
                 </label>
               `).join('')}
             </div>` : ''}
@@ -1027,7 +1003,7 @@
       mudarCategoria,
       abrirModalAtribuicao, fecharModalAtribuicao, salvarAtribuicao, removerAtribuicaoAtual,
       abrirModalMembro, fecharModalMembro, salvarMembro, excluirMembro,
-      adicionarLinhaMeta, gerarMetasAutomaticas, toggleMeta, toggleConcluida,
+      atualizarChecklistPreview, toggleChecklistPreview, toggleChecklistItem, toggleConcluida,
       onBuscaChange, onFiltroResponsavelChange, onFiltroPrioridadeChange,
       pedirPermissaoNotificacao, toggleAlertasPainel, verNoQuadro,
     });
