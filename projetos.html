@@ -299,6 +299,64 @@
       font-size: 11px;
       margin-bottom: 4px;
     }
+
+    .provas-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .provas-container h4 {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #555;
+      text-align: left;
+    }
+
+    .provas-placeholder {
+      margin: 0;
+      color: #999;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .provas-linhas {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .prova-linha {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .prova-linha input[type="date"],
+    .prova-linha input[type="time"] {
+      width: auto;
+      flex: 1;
+      min-width: 130px;
+      margin: 0;
+    }
+
+    .prova-linha .btn-icon {
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    .btn-add-prova {
+      width: auto;
+      align-self: flex-start;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+    }
   </style>
   <script type="module" src="/js/firebase-config.js"></script>
 </head>
@@ -321,6 +379,9 @@
     <input type="time" id="horaEntrega">
     <p>Data limite para iniciar</p>
     <input type="date" id="dataLimiteInicio">
+    <div id="provasContainer" class="provas-container">
+      <p class="provas-placeholder">Selecione a categoria para configurar as provas</p>
+    </div>
     <select id="tipoProjeto">
       <option disabled selected>Tipo</option>
       <option>Noiva - Sob Medida</option>
@@ -373,6 +434,9 @@
       </select>
       <label for="editStatusAtual">Etapa Atual:</label>
       <select id="editStatusAtual"></select>
+      <div id="editProvasContainer" class="provas-container">
+        <p class="provas-placeholder">Selecione a categoria para configurar as provas</p>
+      </div>
       <label for="editTipo">Tipo de Projeto:</label>
       <select id="editTipo">
         <option>Noiva - Sob Medida</option>
@@ -444,6 +508,7 @@
     function atualizarEtapasIniciais() {
       const categoria = document.getElementById('categoriaProjeto').value;
       const statusInicial = document.getElementById('statusInicial');
+      popularProvas('provasContainer', categoria);
       if (!categoria) {
         statusInicial.disabled = true;
         statusInicial.innerHTML = '<option value="" disabled selected>Selecione a categoria primeiro</option>';
@@ -457,6 +522,62 @@
       const categoria = document.getElementById('editCategoria').value;
       const statusAtualAnterior = document.getElementById('editStatusAtual').value;
       popularSelectEtapas(document.getElementById('editStatusAtual'), categoria, statusAtualAnterior);
+      popularProvas('editProvasContainer', categoria);
+    }
+
+    // Cria uma linha de prova (data + horário). "removivel" controla se aparece o botão de remover:
+    // Locação tem sempre exatamente 1 prova fixa; Sob Medida permite múltiplas provas.
+    function criarLinhaProva(data = '', hora = '', removivel = true) {
+      const row = document.createElement('div');
+      row.className = 'prova-linha';
+      row.innerHTML = `
+        <input type="date" class="prova-data" value="${data}">
+        <input type="time" class="prova-hora" value="${hora}">
+        ${removivel ? '<button type="button" class="btn-icon" title="Remover prova" onclick="this.parentElement.remove()">✖</button>' : ''}
+      `;
+      return row;
+    }
+
+    // Monta o bloco de provas dentro de containerId, de acordo com a categoria:
+    // - locacao: um único campo de data/horário da prova, sem opção de adicionar mais.
+    // - sob_medida: uma ou mais provas, com botão para adicionar novas.
+    function popularProvas(containerId, categoria, provasExistentes = []) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+
+      if (!categoria) {
+        container.innerHTML = '<p class="provas-placeholder">Selecione a categoria para configurar as provas</p>';
+        return;
+      }
+
+      const titulo = document.createElement('h4');
+      titulo.textContent = categoria === 'locacao' ? 'Data e Horário da Prova' : 'Provas (Sob Medida)';
+      container.appendChild(titulo);
+
+      const linhas = document.createElement('div');
+      linhas.className = 'provas-linhas';
+      container.appendChild(linhas);
+
+      const provasIniciais = provasExistentes.length > 0 ? provasExistentes : [{ data: '', hora: '' }];
+
+      if (categoria === 'locacao') {
+        linhas.appendChild(criarLinhaProva(provasIniciais[0].data, provasIniciais[0].hora, false));
+      } else {
+        provasIniciais.forEach(p => linhas.appendChild(criarLinhaProva(p.data, p.hora, true)));
+        const btnAdd = document.createElement('button');
+        btnAdd.type = 'button';
+        btnAdd.className = 'btn-add-prova';
+        btnAdd.textContent = '+ Adicionar Prova';
+        btnAdd.onclick = () => linhas.appendChild(criarLinhaProva('', '', true));
+        container.appendChild(btnAdd);
+      }
+    }
+
+    function coletarProvas(containerId) {
+      return Array.from(document.querySelectorAll(`#${containerId} .prova-linha`)).map(row => ({
+        data: row.querySelector('.prova-data').value,
+        hora: row.querySelector('.prova-hora').value
+      })).filter(p => p.data || p.hora);
     }
 
     // Fecha a etapa em aberto e abre a nova, mantendo o histórico de tempo por etapa
@@ -493,6 +614,7 @@
       const hora = document.getElementById('horaEntrega').value;
       const dataLimiteInicio = document.getElementById('dataLimiteInicio').value;
       const tipo = document.getElementById('tipoProjeto').value;
+      const provas = coletarProvas('provasContainer');
 
       // Validação simples
       if (!nome || !categoria || !status || !data || !hora || tipo === 'Tipo') {
@@ -508,6 +630,7 @@
         horaEntrega: hora,
         dataLimiteInicio: dataLimiteInicio || null,
         tipoProjeto: tipo,
+        provas,
         etapas: [{ nome: status, inicio: Date.now(), fim: null }] // Adicionado 'fim: null' para a etapa inicial
       };
 
@@ -835,6 +958,8 @@
       document.getElementById('editTipo').value = tipo;
       document.getElementById('editCategoria').value = categoria;
       popularSelectEtapas(document.getElementById('editStatusAtual'), categoria, statusAtual);
+      const projetoAtual = projetosCacheKanban[id] || {};
+      popularProvas('editProvasContainer', categoria, projetoAtual.provas || []);
       document.getElementById('modalEdicao').style.display = 'block';
     }
 
@@ -847,6 +972,7 @@
       const novoTipo = document.getElementById('editTipo').value;
       const novaCategoria = document.getElementById('editCategoria').value;
       const novoStatusAtual = document.getElementById('editStatusAtual').value;
+      const novasProvas = coletarProvas('editProvasContainer');
 
       if (!novoNome || !novaData || !novaHora || !novoTipo || !novaCategoria || !novoStatusAtual) {
         alert('Por favor, preencha todos os campos para editar o projeto.');
@@ -871,6 +997,7 @@
           tipoProjeto: novoTipo,
           categoria: novaCategoria,
           statusAtual: novoStatusAtual,
+          provas: novasProvas,
           etapas: etapas
         });
       }).then(() => {
