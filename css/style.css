@@ -35,6 +35,19 @@
   --radius: 12px;
 }
 
+/* Tipografia responsiva: como todo o layout usa rem, aumentar a fonte base
+   escala texto, badges e espaçamentos juntos. Mira telas de tablet com toque
+   (pointer: coarse) para não alterar a aparência em desktop/notebook com mouse. */
+html {
+  font-size: 16px;
+}
+
+@media (min-width: 600px) and (max-width: 1366px) and (pointer: coarse) {
+  html {
+    font-size: 19px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

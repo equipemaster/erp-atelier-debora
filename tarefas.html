@@ -331,10 +331,10 @@
     }
 
     .metas-secao { margin-top: 14px; border-top: 1px solid #eee; padding-top: 12px; }
-    .metas-secao h4 { margin: 0 0 8px; font-size: 0.85rem; }
+    .metas-secao h4 { margin: 0 0 4px; font-size: 0.85rem; }
+    .metas-hint { margin: 0 0 8px; font-size: 0.75rem; color: var(--text-muted); }
     .meta-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
     .meta-row input[type="date"] { width: 150px; margin: 0; flex-shrink: 0; }
-    .meta-row input[type="text"] { flex: 1; margin: 0; }
     .meta-row input[type="checkbox"] { width: auto; margin: 0; }
     .meta-row button { padding: 4px 8px; font-size: 0.7rem; }
 
@@ -431,6 +431,7 @@
 
       <div class="metas-secao">
         <h4>Metas diárias (para garantir a entrega no prazo)</h4>
+        <p class="metas-hint">A descrição de cada meta diária é sempre o texto do campo Observações acima.</p>
         <div id="metasContainer"></div>
         <button type="button" class="btn-secundario" onclick="gerarMetasAutomaticas()">⚡ Gerar metas automaticamente</button>
         <button type="button" class="btn-secundario" onclick="adicionarLinhaMeta()">+ Adicionar meta</button>
@@ -662,7 +663,7 @@
       document.getElementById('atribConcluida').checked = !!atrib?.concluida;
 
       document.getElementById('metasContainer').innerHTML = '';
-      (atrib?.metas || []).forEach(m => adicionarLinhaMeta(m.data, m.descricao, m.concluida));
+      (atrib?.metas || []).forEach(m => adicionarLinhaMeta(m.data, m.concluida));
 
       document.getElementById('btnRemoverAtribuicao').style.display = atrib ? 'inline-block' : 'none';
       document.getElementById('modalAtribuicao').style.display = 'flex';
@@ -673,21 +674,20 @@
       atribuicaoAtual = { projetoId: null, etapa: null };
     }
 
-    function adicionarLinhaMeta(data = '', descricao = '', concluida = false) {
+    function adicionarLinhaMeta(data = '', concluida = false) {
       const container = document.getElementById('metasContainer');
       const row = document.createElement('div');
       row.className = 'meta-row';
       row.innerHTML = `
         <input type="checkbox" class="meta-concluida" ${concluida ? 'checked' : ''}>
         <input type="date" class="meta-data" value="${data}">
-        <input type="text" class="meta-descricao" placeholder="O que precisa avançar hoje?" value="${escapeHtml(descricao)}">
         <button type="button" class="btn-icon" title="Remover meta" onclick="this.parentElement.remove()">✖</button>
       `;
       container.appendChild(row);
     }
 
     function gerarMetasAutomaticas() {
-      const { projetoId, etapa } = atribuicaoAtual;
+      const { projetoId } = atribuicaoAtual;
       const projeto = projetosCache[projetoId];
       const inicio = document.getElementById('atribInicio').value;
       const entrega = projeto?.dataEntrega;
@@ -702,18 +702,17 @@
       let count = 0;
       while (atual <= dFim && count < 60) {
         if (atual.getDay() !== 0) { // pula domingo
-          adicionarLinhaMeta(atual.toISOString().slice(0, 10), `Avançar ${etapa}`, false);
+          adicionarLinhaMeta(atual.toISOString().slice(0, 10), false);
         }
         atual.setDate(atual.getDate() + 1);
         count++;
       }
-      showToast('Metas diárias geradas. Ajuste as descrições se quiser.');
+      showToast('Metas diárias geradas.');
     }
 
     function coletarMetasDoForm() {
       return Array.from(document.querySelectorAll('#metasContainer .meta-row')).map(row => ({
         data: row.querySelector('.meta-data').value,
-        descricao: row.querySelector('.meta-descricao').value.trim(),
         concluida: row.querySelector('.meta-concluida').checked
       })).filter(m => m.data);
     }
@@ -945,7 +944,7 @@
           ${metaHojeObj ? `
             <label class="meta-hoje-toggle" onclick="event.stopPropagation()">
               <input type="checkbox" ${metaHojeObj.concluida ? 'checked' : ''} onchange="toggleMetaHoje('${chave}')">
-              <span>Hoje: ${escapeHtml(metaHojeObj.descricao || 'meta diária')}</span>
+              <span>Hoje: ${escapeHtml(atrib.observacoes || 'meta diária')}</span>
             </label>` : ''}
 
           ${atrib ? `
