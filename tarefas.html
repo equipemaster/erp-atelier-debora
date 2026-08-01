@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <link rel="icon" href="android-chrome-192x192.png" type="image/png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quadro de Tarefas - Ateliê Débora Freitas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="module">
+    import { checkAuth, logout } from './js/auth.js';
+    checkAuth();
+    window.logout = logout;
+  </script>
+  <script type="module" src="/js/firebase-config.js"></script>
+
+  <style>
+    body { padding: 0; }
+
+    header.page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px 24px;
+      text-align: left;
+    }
+
+    header.page-header .titulo-wrap h1 { margin: 0; font-size: 1.6rem; }
+
+    header.page-header .titulo-wrap p {
+      margin: 2px 0 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    header.page-header nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    header.page-header nav a,
+    header.page-header nav button.nav-btn {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--surface-border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      box-shadow: none;
+    }
+
+    header.page-header nav a:hover,
+    header.page-header nav button.nav-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: none;
+    }
+
+    main.conteudo { max-width: 1700px; margin: 0 auto; padding: 0 24px 60px; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .toolbar input[type="text"],
+    .toolbar select { width: auto; margin: 0; min-width: 170px; }
+    .toolbar .spacer { flex: 1; }
+    .toolbar button { margin: 0; }
+
+    .kanban-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #555;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      box-shadow: none;
+    }
+
+    .tab-btn:hover { transform: none; }
+    .tab-btn.active { background: #000; color: #fff; border-color: #000; }
+
+    .alertas-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #fff5f5;
+      border: 1px solid #f2c2c2;
+      color: #a33;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .alertas-bar .badge-count {
+      background: #d9534f;
+      color: #fff;
+      border-radius: 999px;
+      padding: 2px 9px;
+      font-size: 0.8rem;
+    }
+
+    .alertas-panel {
+      display: none;
+      background: #fff;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .alertas-panel h4 { margin: 14px 0 6px; font-size: 0.9rem; }
+    .alertas-panel h4:first-child { margin-top: 0; }
+    .alertas-panel ul { list-style: none; margin: 0; padding: 0; }
+    .alertas-panel li { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+    .alertas-panel li:hover { background: #f5f5f5; }
+
+    .equipe-secao { margin-bottom: 18px; }
+
+    .equipe-secao h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 0 0 8px;
+    }
+
+    .equipe-strip { display: flex; gap: 10px; flex-wrap: wrap; }
+    .equipe-vazio { color: var(--text-muted); font-size: 0.85rem; }
+
+    .equipe-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid var(--surface-border);
+      border-radius: 999px;
+      padding: 6px 10px 6px 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .equipe-chip-info { display: flex; flex-direction: column; line-height: 1.15; }
+    .equipe-chip-info strong { font-size: 0.8rem; }
+    .equipe-chip-info small { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .equipe-chip .btn-icon { background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.45; padding: 2px; box-shadow: none; }
+    .equipe-chip .btn-icon:hover { opacity: 1; transform: none; }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    .avatar-sm { width: 22px; height: 22px; font-size: 0.6rem; }
+
+    .board { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; }
+
+    .board-col {
+      flex: 0 0 290px;
+      background: linear-gradient(to bottom, #f9f9f9, #f0f0f0);
+      border: 1px solid #e0e0e0;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      max-height: 72vh;
+    }
+
+    .board-col-header {
+      padding: 14px 14px 10px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .board-col-count { background: #000; color: #fff; border-radius: 999px; font-size: 0.7rem; padding: 2px 8px; }
+
+    .board-col-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .board-col-body::-webkit-scrollbar { width: 5px; }
+    .board-col-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    .col-vazia { text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px 0; }
+
+    .task-card {
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      border-left: 5px solid var(--accent);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .task-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); }
+    .task-card.sem-responsavel { border-left-style: dashed; }
+    .task-card-top { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .badge-projeto, .badge-etapa {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .badge-projeto { background: #eee; color: #333; }
+    .badge-etapa { background: #f3e5d0; color: #7a5a2a; }
+    .task-card-titulo { font-size: 0.95rem; line-height: 1.3; color: #111; }
+
+    .alerta-linha { font-size: 0.72rem; font-weight: 700; padding: 3px 6px; border-radius: 6px; width: fit-content; }
+    .alerta-atrasado { background: #fde3e3; color: #a33; }
+    .alerta-hoje { background: #fff2d9; color: #a06b00; }
+    .alerta-meta { background: #e7f0ff; color: #1a5ea0; }
+    .alerta-sem-resp { background: #f1e9ff; color: #5a3aa0; }
+    .alerta-concluida { background: #eaf7ea; color: #2f7d32; }
+
+    .task-card-responsavel { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #444; }
+
+    .sem-responsavel-linha {
+      display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted);
+      border: 1px dashed #ddd; border-radius: 8px; padding: 6px 8px;
+    }
+
+    .badge-prazo { font-size: 0.7rem; padding: 3px 7px; border-radius: 6px; width: fit-content; font-weight: 600; }
+    .badge-ok { background: #eef7ee; color: #2f7d32; }
+    .badge-breve { background: #fff2d9; color: #a06b00; }
+    .badge-hoje { background: #ffe3cf; color: #b3480b; }
+    .badge-atrasado { background: #fde3e3; color: #a33; }
+
+    .meta-progress-bar { background: #eee; border-radius: 999px; height: 6px; overflow: hidden; }
+    .meta-progress-bar div { background: var(--accent); height: 100%; }
+    .meta-progress small { color: var(--text-muted); font-size: 0.68rem; }
+
+    .meta-hoje-toggle, .concluida-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      background: #fafafa;
+      border: 1px dashed #ddd;
+      border-radius: 8px;
+      padding: 5px 7px;
+      cursor: pointer;
+    }
+
+    .meta-hoje-toggle input, .concluida-toggle input { width: auto; margin: 0; }
+
+    /* Modais */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-y: auto;
+      padding: 40px 16px;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 26px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-box h3 { margin-top: 0; margin-bottom: 2px; }
+    .modal-subtitulo { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 14px; }
+    .modal-prazo-info {
+      background: #f7f7f7; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem;
+      display: inline-block; margin-bottom: 6px;
+    }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+    .modal-grid .full { grid-column: 1 / -1; }
+
+    .modal-box label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 10px;
+    }
+
+    .metas-secao { margin-top: 14px; border-top: 1px solid #eee; padding-top: 12px; }
+    .metas-secao h4 { margin: 0 0 8px; font-size: 0.85rem; }
+    .meta-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .meta-row input[type="date"] { width: 150px; margin: 0; flex-shrink: 0; }
+    .meta-row input[type="text"] { flex: 1; margin: 0; }
+    .meta-row input[type="checkbox"] { width: auto; margin: 0; }
+    .meta-row button { padding: 4px 8px; font-size: 0.7rem; }
+
+    .concluida-secao { margin-top: 14px; }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .modal-actions button, .metas-secao button { width: auto; }
+    .btn-secundario { background: #eee !important; color: #333 !important; box-shadow: none !important; }
+    .btn-perigo { background: #d9534f !important; }
+
+    @media (max-width: 768px) {
+      .modal-grid { grid-template-columns: 1fr; }
+      .board-col { flex: 0 0 85%; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="page-header">
+    <div class="titulo-wrap">
+      <h1>Quadro de Tarefas</h1>
+      <p>Os projetos e suas etapas vêm de <a href="projetos.html" style="text-decoration:underline;">Projetos</a>. Aqui você atribui cada etapa a um especialista, com metas diárias até a entrega combinada.</p>
+    </div>
+    <nav>
+      <a href="gestao.html">Gestão à Vista</a>
+      <a href="projetos.html">Projetos</a>
+      <a href="home.html">Menu</a>
+      <button type="button" class="nav-btn" onclick="logout()">Sair</button>
+    </nav>
+  </header>
+
+  <main class="conteudo">
+    <div class="toolbar">
+      <input type="text" id="campoBusca" placeholder="🔍 Buscar projeto ou responsável..." oninput="onBuscaChange(this.value)">
+      <select id="filtroResponsavel" onchange="onFiltroResponsavelChange(this.value)">
+        <option value="">Todos os responsáveis</option>
+      </select>
+      <select id="filtroPrioridade" onchange="onFiltroPrioridadeChange(this.value)">
+        <option value="">Todas as prioridades</option>
+        <option value="alta">Prioridade alta</option>
+        <option value="media">Prioridade média</option>
+        <option value="baixa">Prioridade baixa</option>
+      </select>
+      <span class="spacer"></span>
+      <button type="button" onclick="pedirPermissaoNotificacao()">🔔 Ativar Alertas</button>
+      <button type="button" onclick="abrirModalMembro()">+ Membro</button>
+    </div>
+
+    <div class="alertas-bar" id="alertasBarra" onclick="toggleAlertasPainel()">
+      <span>⚠️ Etapas precisando de atenção</span>
+      <span class="badge-count" id="alertasContador">0</span>
+      <span style="margin-left:auto; font-weight:400;">clique para ver detalhes</span>
+    </div>
+    <div class="alertas-panel" id="alertasPainel"></div>
+
+    <div class="equipe-secao">
+      <h3>Equipe do Ateliê</h3>
+      <div class="equipe-strip" id="equipeStrip"></div>
+    </div>
+
+    <div class="kanban-tabs">
+      <button type="button" id="tabSobMedida" class="tab-btn active" onclick="mudarCategoria('sob_medida')">Sob Medida</button>
+      <button type="button" id="tabLocacao" class="tab-btn" onclick="mudarCategoria('locacao')">Locação</button>
+    </div>
+
+    <div class="board" id="board"></div>
+  </main>
+
+  <!-- Modal Atribuir Responsável -->
+  <div class="modal-overlay" id="modalAtribuicao">
+    <div class="modal-box">
+      <h3 id="modalAtribuicaoTitulo">Atribuir Tarefa</h3>
+      <p class="modal-subtitulo" id="modalAtribuicaoSubtitulo"></p>
+      <div class="modal-prazo-info" id="modalAtribuicaoPrazo"></div>
+
+      <div class="modal-grid">
+        <div>
+          <label for="atribResponsavel">Responsável</label>
+          <select id="atribResponsavel"></select>
+        </div>
+        <div>
+          <label for="atribPrioridade">Prioridade</label>
+          <select id="atribPrioridade"></select>
+        </div>
+        <div class="full">
+          <label for="atribInicio">Data de início</label>
+          <input type="date" id="atribInicio">
+        </div>
+        <div class="full">
+          <label for="atribObservacoes">Observações</label>
+          <textarea id="atribObservacoes" rows="2" placeholder="Detalhes do que precisa ser feito nesta etapa"></textarea>
+        </div>
+      </div>
+
+      <div class="metas-secao">
+        <h4>Metas diárias (para garantir a entrega no prazo)</h4>
+        <div id="metasContainer"></div>
+        <button type="button" class="btn-secundario" onclick="gerarMetasAutomaticas()">⚡ Gerar metas automaticamente</button>
+        <button type="button" class="btn-secundario" onclick="adicionarLinhaMeta()">+ Adicionar meta</button>
+      </div>
+
+      <div class="concluida-secao">
+        <label class="concluida-toggle">
+          <input type="checkbox" id="atribConcluida">
+          <span>Responsável já concluiu esta etapa</span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="btnRemoverAtribuicao" class="btn-perigo" style="display:none" onclick="removerAtribuicaoAtual()">Remover atribuição</button>
+        <button type="button" class="btn-secundario" onclick="fecharModalAtribuicao()">Cancelar</button>
+        <button type="button" onclick="salvarAtribuicao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Novo Membro -->
+  <div class="modal-overlay" id="modalMembro">
+    <div class="modal-box" style="max-width:420px;">
+      <h3>Adicionar Membro da Equipe</h3>
+      <label for="membroNome">Nome</label>
+      <input type="text" id="membroNome" placeholder="Nome completo">
+      <label for="membroEspecialidade">Especialidade</label>
+      <select id="membroEspecialidade"></select>
+      <div class="modal-actions">
+        <button type="button" class="btn-secundario" onclick="fecharModalMembro()">Cancelar</button>
+        <button type="button" onclick="salvarMembro()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { ref, onValue, push, set, update, remove } from 'firebase/database';
+    import { database as db } from '/js/firebase-config.js';
+    import Swal from 'sweetalert2';
+
+    // Mesmas etapas e regra de categoria usadas no Kanban de projetos.html,
+    // para que o quadro de tarefas reflita exatamente a etapa atual de cada projeto.
+    const ETAPAS_POR_CATEGORIA = {
+      sob_medida: ['Modelagem', 'Corte', 'Costura', 'Acabamento', 'Prova', 'Ajuste', 'Lavanderia'],
+      locacao: ['Acabamento', 'Prova', 'Ajuste', 'Lavanderia'],
+    };
+
+    const ESPECIALIDADES = ['Modelagem', 'Corte', 'Costura', 'Acabamento', 'Prova & Ajuste', 'Lavanderia', 'Atendimento', 'Geral'];
+
+    const PRIORIDADES = {
+      baixa: { label: 'Baixa', cor: '#17a2b8' },
+      media: { label: 'Média', cor: '#ffc107' },
+      alta: { label: 'Alta', cor: '#d9534f' },
+    };
+
+    const PALETA_AVATAR = ['#c7a17a', '#8a6d3b', '#5c8a8a', '#7a5c8a', '#8a5c5c', '#5c7a8a', '#9a8a4a', '#4a6a9a'];
+
+    let equipeCache = {};
+    let projetosCache = {};
+    let atribuicoesCache = {};
+    let categoriaAtiva = 'sob_medida';
+    let filtroTexto = '';
+    let filtroResponsavel = '';
+    let filtroPrioridade = '';
+
+    // Contexto da atribuição aberta no modal no momento
+    let atribuicaoAtual = { projetoId: null, etapa: null };
+
+    let notificadosSet = new Set(JSON.parse(sessionStorage.getItem('tarefas_notificados') || '[]'));
+
+    function escapeHtml(str) {
+      return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function initials(nome) {
+      return nome.trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('') || '?';
+    }
+
+    function hojeStr() {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().slice(0, 10);
+    }
+
+    function diasRestantes(dataISO) {
+      const hoje = new Date(hojeStr() + 'T00:00:00');
+      const alvo = new Date(dataISO + 'T00:00:00');
+      return Math.round((alvo - hoje) / 86400000);
+    }
+
+    function formatDateBR(iso) {
+      if (!iso) return '';
+      const [y, m, d] = iso.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function etapasDaCategoria(categoria) {
+      return ETAPAS_POR_CATEGORIA[categoria] || ETAPAS_POR_CATEGORIA.sob_medida;
+    }
+
+    // Projetos antigos podem não ter o campo "categoria" salvo; infere pelo texto do tipo (mesma regra de projetos.html)
+    function inferirCategoria(projeto) {
+      if (projeto.categoria && ETAPAS_POR_CATEGORIA[projeto.categoria]) return projeto.categoria;
+      const tipo = (projeto.tipoProjeto || '').toLowerCase();
+      return tipo.includes('locação') || tipo.includes('locacao') ? 'locacao' : 'sob_medida';
+    }
+
+    function etapaKey(etapa) {
+      return String(etapa).toLowerCase().replace(/\s+/g, '');
+    }
+
+    function chaveAtribuicao(projetoId, etapa) {
+      return `${projetoId}_${etapaKey(etapa)}`;
+    }
+
+    // Toast leve, sem dependência, no mesmo padrão usado em js/dashboard.js
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      const icon = type === 'error' ? '❌' : '✅';
+      toast.textContent = `${icon} ${message}`;
+      Object.assign(toast.style, {
+        position: 'fixed', top: '20px', right: '20px', padding: '12px 20px', borderRadius: '8px',
+        background: type === 'error' ? '#d9534f' : '#5cb85c', color: '#fff', fontWeight: 'bold',
+        zIndex: 9999, boxShadow: '0 4px 12px rgba(0,0,0,0.3)', opacity: '1', transition: 'opacity 0.5s ease'
+      });
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+      }, 2500);
+    }
+
+    function popularSelectPrioridade() {
+      document.getElementById('atribPrioridade').innerHTML = Object.entries(PRIORIDADES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    }
+
+    function popularSelectEspecialidades() {
+      document.getElementById('membroEspecialidade').innerHTML = '<option value="" disabled selected>Especialidade</option>'
+        + ESPECIALIDADES.map(e => `<option value="${e}">${e}</option>`).join('');
+    }
+
+    function mudarCategoria(categoria) {
+      categoriaAtiva = categoria;
+      document.getElementById('tabSobMedida').classList.toggle('active', categoria === 'sob_medida');
+      document.getElementById('tabLocacao').classList.toggle('active', categoria === 'locacao');
+      renderBoard();
+    }
+
+    // ---------- Equipe ----------
+    function renderEquipe() {
+      const strip = document.getElementById('equipeStrip');
+      const entries = Object.entries(equipeCache);
+
+      strip.innerHTML = entries.length === 0
+        ? '<span class="equipe-vazio">Nenhum membro cadastrado ainda. Clique em "+ Membro" para adicionar.</span>'
+        : entries.map(([id, m]) => `
+          <div class="equipe-chip">
+            <span class="avatar" style="background:${m.cor || '#c7a17a'}">${escapeHtml(initials(m.nome || '?'))}</span>
+            <div class="equipe-chip-info">
+              <strong>${escapeHtml(m.nome)}</strong>
+              <small>${escapeHtml(m.especialidade || '')}</small>
+            </div>
+            <button type="button" class="btn-icon" title="Remover" onclick="excluirMembro('${id}')">🗑️</button>
+          </div>
+        `).join('');
+
+      [document.getElementById('atribResponsavel'), document.getElementById('filtroResponsavel')].forEach(sel => {
+        if (!sel) return;
+        const atual = sel.value;
+        const isFiltro = sel.id === 'filtroResponsavel';
+        sel.innerHTML = (isFiltro ? '<option value="">Todos os responsáveis</option>' : '<option value="" disabled selected>Selecione um responsável</option>')
+          + entries.map(([id, m]) => `<option value="${id}">${escapeHtml(m.nome)} — ${escapeHtml(m.especialidade || '')}</option>`).join('');
+        if (atual) sel.value = atual;
+      });
+    }
+
+    function abrirModalMembro() {
+      document.getElementById('membroNome').value = '';
+      document.getElementById('membroEspecialidade').value = '';
+      document.getElementById('modalMembro').style.display = 'flex';
+    }
+
+    function fecharModalMembro() {
+      document.getElementById('modalMembro').style.display = 'none';
+    }
+
+    function salvarMembro() {
+      const nome = document.getElementById('membroNome').value.trim();
+      const especialidade = document.getElementById('membroEspecialidade').value;
+      if (!nome || !especialidade) return showToast('Preencha nome e especialidade.', 'error');
+
+      const cor = PALETA_AVATAR[Object.keys(equipeCache).length % PALETA_AVATAR.length];
+      push(ref(db, 'equipe'), { nome, especialidade, cor, criadoEm: Date.now() })
+        .then(() => { showToast('Membro da equipe adicionado!'); fecharModalMembro(); })
+        .catch(err => showToast('Erro ao adicionar membro: ' + err.message, 'error'));
+    }
+
+    function excluirMembro(id) {
+      const membro = equipeCache[id];
+      Swal.fire({
+        title: 'Remover membro?',
+        text: `"${membro?.nome || ''}" será removido da equipe. Atribuições já feitas continuam com o nome registrado.`,
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'Remover', cancelButtonText: 'Cancelar', confirmButtonColor: '#d9534f'
+      }).then(res => {
+        if (!res.isConfirmed) return;
+        remove(ref(db, 'equipe/' + id)).then(() => showToast('Membro removido.')).catch(err => showToast('Erro: ' + err.message, 'error'));
+      });
+    }
+
+    // ---------- Atribuição de tarefas (projeto + etapa -> responsável) ----------
+    function abrirModalAtribuicao(projetoId, etapa) {
+      const projeto = projetosCache[projetoId];
+      if (!projeto) return;
+      atribuicaoAtual = { projetoId, etapa };
+
+      const chave = chaveAtribuicao(projetoId, etapa);
+      const atrib = atribuicoesCache[chave];
+
+      document.getElementById('modalAtribuicaoTitulo').textContent = projeto.nome;
+      document.getElementById('modalAtribuicaoSubtitulo').textContent = `${etapa} · ${projeto.tipoProjeto || ''}`;
+      document.getElementById('modalAtribuicaoPrazo').textContent = projeto.dataEntrega
+        ? `📅 Entrega combinada do projeto: ${formatDateBR(projeto.dataEntrega)}${projeto.horaEntrega ? ' às ' + projeto.horaEntrega : ''}`
+        : 'Projeto sem data de entrega definida (ajuste em Projetos).';
+
+      document.getElementById('atribResponsavel').value = atrib?.responsavelId || '';
+      document.getElementById('atribPrioridade').value = atrib?.prioridade || 'media';
+      document.getElementById('atribInicio').value = atrib?.dataInicio || hojeStr();
+      document.getElementById('atribObservacoes').value = atrib?.observacoes || '';
+      document.getElementById('atribConcluida').checked = !!atrib?.concluida;
+
+      document.getElementById('metasContainer').innerHTML = '';
+      (atrib?.metas || []).forEach(m => adicionarLinhaMeta(m.data, m.descricao, m.concluida));
+
+      document.getElementById('btnRemoverAtribuicao').style.display = atrib ? 'inline-block' : 'none';
+      document.getElementById('modalAtribuicao').style.display = 'flex';
+    }
+
+    function fecharModalAtribuicao() {
+      document.getElementById('modalAtribuicao').style.display = 'none';
+      atribuicaoAtual = { projetoId: null, etapa: null };
+    }
+
+    function adicionarLinhaMeta(data = '', descricao = '', concluida = false) {
+      const container = document.getElementById('metasContainer');
+      const row = document.createElement('div');
+      row.className = 'meta-row';
+      row.innerHTML = `
+        <input type="checkbox" class="meta-concluida" ${concluida ? 'checked' : ''}>
+        <input type="date" class="meta-data" value="${data}">
+        <input type="text" class="meta-descricao" placeholder="O que precisa avançar hoje?" value="${escapeHtml(descricao)}">
+        <button type="button" class="btn-icon" title="Remover meta" onclick="this.parentElement.remove()">✖</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function gerarMetasAutomaticas() {
+      const { projetoId, etapa } = atribuicaoAtual;
+      const projeto = projetosCache[projetoId];
+      const inicio = document.getElementById('atribInicio').value;
+      const entrega = projeto?.dataEntrega;
+      if (!inicio || !entrega) return showToast('Defina a data de início e garanta que o projeto tem data de entrega.', 'error');
+
+      const dIni = new Date(inicio + 'T00:00:00');
+      const dFim = new Date(entrega + 'T00:00:00');
+      if (dFim < dIni) return showToast('A data de entrega do projeto é anterior à data de início.', 'error');
+
+      document.getElementById('metasContainer').innerHTML = '';
+      const atual = new Date(dIni);
+      let count = 0;
+      while (atual <= dFim && count < 60) {
+        if (atual.getDay() !== 0) { // pula domingo
+          adicionarLinhaMeta(atual.toISOString().slice(0, 10), `Avançar ${etapa}`, false);
+        }
+        atual.setDate(atual.getDate() + 1);
+        count++;
+      }
+      showToast('Metas diárias geradas. Ajuste as descrições se quiser.');
+    }
+
+    function coletarMetasDoForm() {
+      return Array.from(document.querySelectorAll('#metasContainer .meta-row')).map(row => ({
+        data: row.querySelector('.meta-data').value,
+        descricao: row.querySelector('.meta-descricao').value.trim(),
+        concluida: row.querySelector('.meta-concluida').checked
+      })).filter(m => m.data);
+    }
+
+    function salvarAtribuicao() {
+      const { projetoId, etapa } = atribuicaoAtual;
+      if (!projetoId || !etapa) return;
+
+      const responsavelId = document.getElementById('atribResponsavel').value;
+      if (!responsavelId) return showToast('Selecione um responsável.', 'error');
+
+      const projeto = projetosCache[projetoId];
+      const membro = equipeCache[responsavelId] || {};
+      const chave = chaveAtribuicao(projetoId, etapa);
+      const existente = atribuicoesCache[chave];
+
+      const obj = {
+        projetoId,
+        projetoNome: projeto?.nome || '',
+        etapa,
+        responsavelId,
+        responsavelNome: membro.nome || '',
+        especialidadeResponsavel: membro.especialidade || '',
+        prioridade: document.getElementById('atribPrioridade').value,
+        dataInicio: document.getElementById('atribInicio').value || null,
+        observacoes: document.getElementById('atribObservacoes').value.trim(),
+        metas: coletarMetasDoForm(),
+        concluida: document.getElementById('atribConcluida').checked,
+        criadoEm: existente?.criadoEm || Date.now(),
+        atualizadoEm: Date.now(),
+      };
+
+      set(ref(db, 'atribuicoes/' + chave), obj)
+        .then(() => { showToast('Atribuição salva!'); fecharModalAtribuicao(); })
+        .catch(err => showToast('Erro ao salvar atribuição: ' + err.message, 'error'));
+    }
+
+    function removerAtribuicaoAtual() {
+      const { projetoId, etapa } = atribuicaoAtual;
+      if (!projetoId || !etapa) return;
+      const chave = chaveAtribuicao(projetoId, etapa);
+
+      Swal.fire({
+        title: 'Remover atribuição?', text: 'A etapa volta a ficar sem responsável definido.', icon: 'warning',
+        showCancelButton: true, confirmButtonText: 'Remover', cancelButtonText: 'Cancelar', confirmButtonColor: '#d9534f'
+      }).then(res => {
+        if (!res.isConfirmed) return;
+        remove(ref(db, 'atribuicoes/' + chave))
+          .then(() => { showToast('Atribuição removida.'); fecharModalAtribuicao(); })
+          .catch(err => showToast('Erro: ' + err.message, 'error'));
+      });
+    }
+
+    function toggleMetaHoje(chave) {
+      const atrib = atribuicoesCache[chave];
+      if (!atrib || !Array.isArray(atrib.metas)) return;
+      const hoje = hojeStr();
+      const metas = atrib.metas.map(m => m.data === hoje ? { ...m, concluida: !m.concluida } : m);
+      update(ref(db, 'atribuicoes/' + chave), { metas, atualizadoEm: Date.now() }).catch(err => showToast('Erro: ' + err.message, 'error'));
+    }
+
+    function toggleConcluida(chave) {
+      const atrib = atribuicoesCache[chave];
+      if (!atrib) return;
+      update(ref(db, 'atribuicoes/' + chave), { concluida: !atrib.concluida, atualizadoEm: Date.now() })
+        .catch(err => showToast('Erro: ' + err.message, 'error'));
+    }
+
+    // ---------- Filtros ----------
+    function onBuscaChange(v) { filtroTexto = v.toLowerCase(); renderBoard(); }
+    function onFiltroResponsavelChange(v) { filtroResponsavel = v; renderBoard(); }
+    function onFiltroPrioridadeChange(v) { filtroPrioridade = v; renderBoard(); }
+
+    function passaFiltro(projeto, atrib) {
+      if (filtroTexto) {
+        const alvo = `${projeto.nome} ${atrib?.responsavelNome || ''}`.toLowerCase();
+        if (!alvo.includes(filtroTexto)) return false;
+      }
+      if (filtroResponsavel && atrib?.responsavelId !== filtroResponsavel) return false;
+      if (filtroPrioridade && atrib?.prioridade !== filtroPrioridade) return false;
+      return true;
+    }
+
+    // ---------- Alertas ----------
+    // Retorna a lista de [projetoId, projeto, etapa, atribuicaoOuNull] visíveis no momento
+    // (apenas a etapa ATUAL de cada projeto ativo, para as duas categorias — usado nos alertas globais)
+    function listarEtapasAtivas() {
+      const lista = [];
+      Object.entries(projetosCache).forEach(([id, projeto]) => {
+        if (!projeto || !projeto.nome) return;
+        const categoria = inferirCategoria(projeto);
+        const etapas = etapasDaCategoria(categoria);
+        if (!etapas.includes(projeto.statusAtual)) return; // Finalizado ou etapa desconhecida: fora do quadro
+        const atrib = atribuicoesCache[chaveAtribuicao(id, projeto.statusAtual)] || null;
+        lista.push([id, projeto, projeto.statusAtual, atrib]);
+      });
+      return lista;
+    }
+
+    function statusAlerta(atrib, dataEntrega) {
+      if (!atrib || atrib.concluida || !dataEntrega) return null;
+      const dias = diasRestantes(dataEntrega);
+      if (dias < 0) return 'atrasado';
+      if (dias === 0) return 'hoje';
+      if (dias <= 2) return 'breve';
+      return null;
+    }
+
+    function metaHojePendente(atrib) {
+      if (!atrib || atrib.concluida || !Array.isArray(atrib.metas)) return false;
+      const hoje = hojeStr();
+      return atrib.metas.some(m => m.data === hoje && !m.concluida);
+    }
+
+    function renderAlertas() {
+      const semResponsavel = [], atrasadas = [], venceHoje = [], metasPendentes = [];
+
+      listarEtapasAtivas().forEach(([id, projeto, etapa, atrib]) => {
+        if (!atrib) { semResponsavel.push([id, projeto, etapa]); return; }
+        const alerta = statusAlerta(atrib, projeto.dataEntrega);
+        if (alerta === 'atrasado') atrasadas.push([id, projeto, etapa, atrib]);
+        if (alerta === 'hoje') venceHoje.push([id, projeto, etapa, atrib]);
+        if (metaHojePendente(atrib)) metasPendentes.push([id, projeto, etapa, atrib]);
+      });
+
+      const total = semResponsavel.length + atrasadas.length + venceHoje.length + metasPendentes.length;
+      document.getElementById('alertasContador').textContent = total;
+      document.getElementById('alertasBarra').style.display = total > 0 ? 'flex' : 'none';
+
+      const secoes = [
+        ['🆕 Aguardando atribuição', semResponsavel.map(([id, p, e]) => [id, p, e, `${p.nome} — ${e}`])],
+        ['🔴 Atrasadas', atrasadas.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
+        ['⏰ Vencem hoje', venceHoje.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
+        ['🔔 Metas de hoje pendentes', metasPendentes.map(([id, p, e, a]) => [id, p, e, `${p.nome} — ${e} (${a.responsavelNome || 'sem nome'})`])],
+      ];
+      document.getElementById('alertasPainel').innerHTML = secoes.filter(([, l]) => l.length > 0).map(([titulo, lista]) => `
+        <h4>${titulo} (${lista.length})</h4>
+        <ul>${lista.map(([id, p, e, texto]) => `<li onclick="verNoQuadro('${id}','${escapeHtml(e)}')">${escapeHtml(texto)}</li>`).join('')}</ul>
+      `).join('') || '<p>Nenhum alerta no momento. 🎉</p>';
+
+      notificarNovosAlertas([...atrasadas, ...venceHoje, ...metasPendentes]);
+    }
+
+    function verNoQuadro(projetoId, etapa) {
+      const projeto = projetosCache[projetoId];
+      if (!projeto) return;
+      mudarCategoria(inferirCategoria(projeto));
+      abrirModalAtribuicao(projetoId, etapa);
+    }
+
+    function notificarNovosAlertas(lista) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      let mudou = false;
+      lista.forEach(([id, projeto, etapa, atrib]) => {
+        const chave = `${chaveAtribuicao(id, etapa)}-${hojeStr()}`;
+        if (notificadosSet.has(chave)) return;
+        notificadosSet.add(chave);
+        mudou = true;
+        new Notification('Ateliê Débora Freitas — atenção necessária', {
+          body: `${projeto.nome} — ${etapa} (${atrib.responsavelNome || 'sem responsável'})`,
+          icon: 'android-chrome-192x192.png'
+        });
+      });
+      if (mudou) sessionStorage.setItem('tarefas_notificados', JSON.stringify([...notificadosSet]));
+    }
+
+    function pedirPermissaoNotificacao() {
+      if (!('Notification' in window)) return showToast('Seu navegador não suporta notificações.', 'error');
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') { showToast('Notificações ativadas!'); renderAlertas(); }
+        else showToast('Permissão de notificação não concedida.', 'error');
+      });
+    }
+
+    function toggleAlertasPainel() {
+      const p = document.getElementById('alertasPainel');
+      p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // ---------- Quadro ----------
+    function renderCard(projetoId, projeto, etapa, atrib) {
+      const chave = chaveAtribuicao(projetoId, etapa);
+      const alerta = statusAlerta(atrib, projeto.dataEntrega);
+      const metaPendente = metaHojePendente(atrib);
+      const prio = PRIORIDADES[atrib?.prioridade] || null;
+      const dias = projeto.dataEntrega ? diasRestantes(projeto.dataEntrega) : null;
+
+      let badgeEntrega = '';
+      if (projeto.dataEntrega) {
+        const label = dias < 0 ? `${Math.abs(dias)}d atrasado` : dias === 0 ? 'Vence hoje' : `${dias}d restantes`;
+        const cls = alerta === 'atrasado' ? 'badge-atrasado' : alerta === 'hoje' ? 'badge-hoje' : alerta === 'breve' ? 'badge-breve' : 'badge-ok';
+        badgeEntrega = `<span class="badge-prazo ${cls}">📅 ${formatDateBR(projeto.dataEntrega)} · ${label}</span>`;
+      }
+
+      const totalMetas = atrib && Array.isArray(atrib.metas) ? atrib.metas.length : 0;
+      const metasFeitas = totalMetas > 0 ? atrib.metas.filter(m => m.concluida).length : 0;
+      const metaHojeObj = totalMetas > 0 ? atrib.metas.find(m => m.data === hojeStr()) : null;
+
+      return `
+        <div class="task-card ${atrib ? '' : 'sem-responsavel'}" onclick="abrirModalAtribuicao('${projetoId}','${etapa}')" style="border-left-color:${prio ? prio.cor : '#ccc'}">
+          <div class="task-card-top">
+            <span class="badge-projeto">${escapeHtml(projeto.tipoProjeto || '')}</span>
+          </div>
+          <strong class="task-card-titulo">${escapeHtml(projeto.nome)}</strong>
+
+          ${!atrib ? '<div class="alerta-linha alerta-sem-resp">🆕 Sem responsável</div>' : ''}
+          ${alerta === 'atrasado' ? '<div class="alerta-linha alerta-atrasado">⚠️ Atrasada</div>' : ''}
+          ${alerta === 'hoje' ? '<div class="alerta-linha alerta-hoje">⏰ Vence hoje</div>' : ''}
+          ${metaPendente ? '<div class="alerta-linha alerta-meta">🔔 Meta de hoje pendente</div>' : ''}
+          ${atrib?.concluida ? '<div class="alerta-linha alerta-concluida">✅ Etapa concluída</div>' : ''}
+
+          ${atrib ? `
+            <div class="task-card-responsavel">
+              <span class="avatar avatar-sm" style="background:${(equipeCache[atrib.responsavelId] || {}).cor || '#c7a17a'}">${escapeHtml(initials(atrib.responsavelNome || '?'))}</span>
+              <span>${escapeHtml(atrib.responsavelNome || '—')}</span>
+            </div>
+          ` : `
+            <div class="sem-responsavel-linha">👤 Clique para atribuir um responsável</div>
+          `}
+
+          ${badgeEntrega}
+
+          ${totalMetas > 0 ? `
+            <div class="meta-progress">
+              <div class="meta-progress-bar"><div style="width:${Math.round(metasFeitas / totalMetas * 100)}%"></div></div>
+              <small>${metasFeitas}/${totalMetas} metas diárias</small>
+            </div>` : ''}
+
+          ${metaHojeObj ? `
+            <label class="meta-hoje-toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" ${metaHojeObj.concluida ? 'checked' : ''} onchange="toggleMetaHoje('${chave}')">
+              <span>Hoje: ${escapeHtml(metaHojeObj.descricao || 'meta diária')}</span>
+            </label>` : ''}
+
+          ${atrib ? `
+            <label class="concluida-toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" ${atrib.concluida ? 'checked' : ''} onchange="toggleConcluida('${chave}')">
+              <span>Concluí minha parte</span>
+            </label>` : ''}
+        </div>
+      `;
+    }
+
+    function renderBoard() {
+      const board = document.getElementById('board');
+      const etapas = etapasDaCategoria(categoriaAtiva);
+
+      const projetosDaCategoria = Object.entries(projetosCache).filter(([, p]) => p && p.nome && inferirCategoria(p) === categoriaAtiva);
+
+      board.innerHTML = etapas.map(etapa => {
+        const doColuna = projetosDaCategoria
+          .filter(([, p]) => p.statusAtual === etapa)
+          .map(([id, p]) => [id, p, atribuicoesCache[chaveAtribuicao(id, etapa)] || null])
+          .filter(([, p, atrib]) => passaFiltro(p, atrib))
+          .sort(([, a], [, b]) => (a.dataEntrega || '9999').localeCompare(b.dataEntrega || '9999'));
+
+        return `
+          <div class="board-col">
+            <div class="board-col-header">${etapa} <span class="board-col-count">${doColuna.length}</span></div>
+            <div class="board-col-body">
+              ${doColuna.length === 0 ? '<p class="col-vazia">Nenhum projeto nesta etapa</p>' : doColuna.map(([id, p, atrib]) => renderCard(id, p, etapa, atrib)).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Script de módulo: funções chamadas via onclick/onchange inline no HTML
+    // precisam ser expostas explicitamente no escopo global.
+    Object.assign(window, {
+      mudarCategoria,
+      abrirModalAtribuicao, fecharModalAtribuicao, salvarAtribuicao, removerAtribuicaoAtual,
+      abrirModalMembro, fecharModalMembro, salvarMembro, excluirMembro,
+      adicionarLinhaMeta, gerarMetasAutomaticas, toggleMetaHoje, toggleConcluida,
+      onBuscaChange, onFiltroResponsavelChange, onFiltroPrioridadeChange,
+      pedirPermissaoNotificacao, toggleAlertasPainel, verNoQuadro,
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      popularSelectPrioridade();
+      popularSelectEspecialidades();
+
+      onValue(ref(db, 'equipe'), snap => { equipeCache = snap.val() || {}; renderEquipe(); renderBoard(); renderAlertas(); });
+      onValue(ref(db, 'projetos'), snap => { projetosCache = snap.val() || {}; renderBoard(); renderAlertas(); });
+      onValue(ref(db, 'atribuicoes'), snap => { atribuicoesCache = snap.val() || {}; renderBoard(); renderAlertas(); });
+
+      // Recalcula prazos/metas periodicamente (ex: virada do dia com a aba aberta)
+      setInterval(() => { renderBoard(); renderAlertas(); }, 15 * 60 * 1000);
+    });
+  </script>
+</body>
+
+</html>

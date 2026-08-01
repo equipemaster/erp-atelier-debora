@@ -20,6 +20,7 @@ export default defineConfig(({ command }) => ({
         projetos: resolve(__dirname, 'projetos.html'),
         relatorios: resolve(__dirname, 'relatorios.html'),
         saida: resolve(__dirname, 'saida.html'),
+        tarefas: resolve(__dirname, 'tarefas.html'),
         vendas: resolve(__dirname, 'vendas.html')
       }
     }
