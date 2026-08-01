@@ -275,7 +275,7 @@
     .meta-progress-bar div { background: var(--accent); height: 100%; }
     .meta-progress small { color: var(--text-muted); font-size: 0.68rem; }
 
-    .meta-hoje-toggle, .concluida-toggle {
+    .concluida-toggle {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -287,7 +287,43 @@
       cursor: pointer;
     }
 
-    .meta-hoje-toggle input, .concluida-toggle input { width: auto; margin: 0; }
+    .concluida-toggle input { width: auto; margin: 0; }
+
+    .checklist-metas {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 130px;
+      overflow-y: auto;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 5px 7px;
+      cursor: pointer;
+    }
+
+    .checklist-item input { width: auto; margin: 2px 0 0; flex-shrink: 0; }
+
+    .checklist-item .checklist-data {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .checklist-item.hoje { border-color: var(--accent); background: #fff8ef; }
+    .checklist-item.hoje .checklist-data { color: var(--accent); font-weight: 700; }
+    .checklist-item.atrasada { border-color: #e3a3a3; background: #fff5f5; }
+    .checklist-item.atrasada .checklist-data { color: #a33; font-weight: 700; }
 
     /* Modais */
     .modal-overlay {
@@ -766,11 +802,10 @@
       });
     }
 
-    function toggleMetaHoje(chave) {
+    function toggleMeta(chave, data) {
       const atrib = atribuicoesCache[chave];
       if (!atrib || !Array.isArray(atrib.metas)) return;
-      const hoje = hojeStr();
-      const metas = atrib.metas.map(m => m.data === hoje ? { ...m, concluida: !m.concluida } : m);
+      const metas = atrib.metas.map(m => m.data === data ? { ...m, concluida: !m.concluida } : m);
       update(ref(db, 'atribuicoes/' + chave), { metas, atualizadoEm: Date.now() }).catch(err => showToast('Erro: ' + err.message, 'error'));
     }
 
@@ -909,7 +944,8 @@
 
       const totalMetas = atrib && Array.isArray(atrib.metas) ? atrib.metas.length : 0;
       const metasFeitas = totalMetas > 0 ? atrib.metas.filter(m => m.concluida).length : 0;
-      const metaHojeObj = totalMetas > 0 ? atrib.metas.find(m => m.data === hojeStr()) : null;
+      const hoje = hojeStr();
+      const metasOrdenadas = totalMetas > 0 ? [...atrib.metas].sort((a, b) => a.data.localeCompare(b.data)) : [];
 
       return `
         <div class="task-card ${atrib ? '' : 'sem-responsavel'}" onclick="abrirModalAtribuicao('${projetoId}','${etapa}')" style="border-left-color:${prio ? prio.cor : '#ccc'}">
@@ -939,13 +975,18 @@
             <div class="meta-progress">
               <div class="meta-progress-bar"><div style="width:${Math.round(metasFeitas / totalMetas * 100)}%"></div></div>
               <small>${metasFeitas}/${totalMetas} metas diárias</small>
+            </div>
+            <div class="checklist-metas" onclick="event.stopPropagation()">
+              ${metasOrdenadas.map(m => `
+                <label class="checklist-item${m.data === hoje ? ' hoje' : ''}${(!m.concluida && m.data < hoje) ? ' atrasada' : ''}">
+                  <input type="checkbox" ${m.concluida ? 'checked' : ''} onchange="toggleMeta('${chave}','${m.data}')">
+                  <span>
+                    <span class="checklist-data">${formatDateBR(m.data)}${m.data === hoje ? ' · hoje' : ''}</span>
+                    ${escapeHtml(atrib.observacoes || 'Meta diária')}
+                  </span>
+                </label>
+              `).join('')}
             </div>` : ''}
-
-          ${metaHojeObj ? `
-            <label class="meta-hoje-toggle" onclick="event.stopPropagation()">
-              <input type="checkbox" ${metaHojeObj.concluida ? 'checked' : ''} onchange="toggleMetaHoje('${chave}')">
-              <span>Hoje: ${escapeHtml(atrib.observacoes || 'meta diária')}</span>
-            </label>` : ''}
 
           ${atrib ? `
             <label class="concluida-toggle" onclick="event.stopPropagation()">
@@ -986,7 +1027,7 @@
       mudarCategoria,
       abrirModalAtribuicao, fecharModalAtribuicao, salvarAtribuicao, removerAtribuicaoAtual,
       abrirModalMembro, fecharModalMembro, salvarMembro, excluirMembro,
-      adicionarLinhaMeta, gerarMetasAutomaticas, toggleMetaHoje, toggleConcluida,
+      adicionarLinhaMeta, gerarMetasAutomaticas, toggleMeta, toggleConcluida,
       onBuscaChange, onFiltroResponsavelChange, onFiltroPrioridadeChange,
       pedirPermissaoNotificacao, toggleAlertasPainel, verNoQuadro,
     });
