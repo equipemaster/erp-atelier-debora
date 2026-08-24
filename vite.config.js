@@ -14,6 +14,7 @@ export default defineConfig(({ command }) => ({
         crm: resolve(__dirname, 'crm.html'),
         contas: resolve(__dirname, 'contas.html'),
         cronograma: resolve(__dirname, 'cronograma.html'),
+        dossies: resolve(__dirname, 'dossies.html'),
         gestao: resolve(__dirname, 'gestao.html'),
         home: resolve(__dirname, 'home.html'),
         produtos: resolve(__dirname, 'produtos.html'),

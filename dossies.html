@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <link rel="icon" href="android-chrome-192x192.png" type="android-chrome-192x192.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dossiê Técnico - Ateliê Débora Freitas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="module" src="/js/firebase-config.js"></script>
+  <style>
+    body {
+      height: auto !important;
+      overflow-y: auto !important;
+      display: block !important;
+      padding-bottom: 60px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .voltar {
+      display: inline-flex;
+      margin: 20px;
+    }
+
+    /* Seletor de tipo */
+    .tipo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin: 20px 0 40px;
+    }
+
+    .tipo-card {
+      background: #fff;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .tipo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+      border-color: var(--accent);
+    }
+
+    .tipo-card .tipo-icon {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+
+    .tipo-card h3 {
+      margin: 0 0 8px;
+    }
+
+    .tipo-card p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    /* Listagem */
+    .lista-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .lista-toolbar input {
+      max-width: 320px;
+      margin: 0;
+    }
+
+    #listaDossies {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dossie-item {
+      background: #fff;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .dossie-item .info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dossie-item .titulo {
+      font-weight: 600;
+    }
+
+    .dossie-item .meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .badge-tipo {
+      display: inline-block;
+      background: var(--primary-gradient);
+      color: #fff;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-right: 8px;
+    }
+
+    .dossie-item .acoes {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dossie-item .acoes button {
+      padding: 6px 14px;
+      font-size: 0.7rem;
+    }
+
+    .btn-secundario {
+      background: #fff !important;
+      color: #000 !important;
+      border: 1px solid #ccc !important;
+      box-shadow: none !important;
+    }
+
+    .btn-perigo {
+      background: var(--error) !important;
+    }
+
+    .vazio {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 30px;
+      font-style: italic;
+    }
+
+    /* Formulário */
+    #viewForm {
+      display: none;
+    }
+
+    .form-topbar {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      padding: 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 1px solid var(--surface-border);
+      margin-bottom: 20px;
+    }
+
+    .form-topbar h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .form-topbar .acoes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-topbar button {
+      padding: 8px 16px;
+      font-size: 0.72rem;
+    }
+
+    .dossie-section {
+      background: #fff;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 18px;
+    }
+
+    .dossie-section h3 {
+      margin: 0 0 14px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #000;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 8px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 4px 20px;
+    }
+
+    .field {
+      margin-bottom: 4px;
+    }
+
+    .field-full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .field input,
+    .field textarea {
+      margin: 0;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .checkbox-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f4f4f4;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      font-size: 0.8rem;
+      user-select: none;
+    }
+
+    .checkbox-pill:has(input:checked) {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
+
+    .checkbox-pill input {
+      width: auto;
+      margin: 0;
+    }
+
+    .measure-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .measure-grid .mitem label {
+      font-size: 0.68rem;
+    }
+
+    .measure-grid .mitem input {
+      margin: 0;
+    }
+
+    .rows-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .rows-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 4px 6px;
+    }
+
+    .rows-table td {
+      padding: 4px 6px;
+    }
+
+    .rows-table input {
+      margin: 0;
+    }
+
+    .img-upload-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .img-thumb {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      background: #f4f4f4;
+    }
+
+    .img-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .img-thumb .remover {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .img-thumb .status {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-size: 0.6rem;
+      text-align: center;
+      padding: 2px 0;
+    }
+
+    /* Área de impressão (fora da tela, usada apenas para gerar o PDF) */
+    #printArea {
+      position: fixed;
+      top: 0;
+      left: -99999px;
+      width: 794px;
+      background: #fff;
+    }
+
+    .print-page {
+      width: 210mm;
+      padding: 12mm 14mm;
+      font-family: 'Outfit', sans-serif;
+      color: #111;
+      box-sizing: border-box;
+    }
+
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+
+    .print-header h1 {
+      font-size: 1.1rem;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #000;
+      background: none;
+      -webkit-text-fill-color: initial;
+    }
+
+    .print-brand {
+      text-align: right;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .print-brand small {
+      display: block;
+      font-weight: 400;
+      letter-spacing: 3px;
+      font-size: 0.55rem;
+      color: #555;
+    }
+
+    .print-section {
+      margin-bottom: 12px;
+      break-inside: avoid;
+    }
+
+    .print-section h3 {
+      background: #000;
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0 0 6px;
+    }
+
+    .print-field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 20px;
+      font-size: 0.72rem;
+    }
+
+    .print-field-grid.full {
+      grid-template-columns: 1fr;
+    }
+
+    .print-checklist {
+      font-size: 0.72rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 20px;
+    }
+
+    .print-measure {
+      font-size: 0.72rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px 14px;
+    }
+
+    .print-images {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .print-images img {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    .print-footer {
+      margin-top: 20px;
+      font-size: 0.6rem;
+      color: #888;
+      text-align: center;
+      border-top: 1px solid #ddd;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Dossiê Técnico</h1>
+    <button onclick="logout()">Sair</button>
+  </header>
+
+  <main>
+    <section id="viewSelector">
+      <h2>Novo dossiê</h2>
+      <div class="tipo-grid" id="tipoGrid"></div>
+
+      <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ddd;">
+
+      <div class="lista-toolbar">
+        <h2 style="margin:0;">Dossiês salvos</h2>
+        <input type="text" id="filtroDossies" placeholder="🔍 Buscar por cliente/projeto...">
+      </div>
+      <div id="listaDossies"></div>
+    </section>
+
+    <section id="viewForm">
+      <div class="form-topbar">
+        <h2 id="formTitulo"></h2>
+        <div class="acoes">
+          <button type="button" class="btn-secundario" onclick="voltarParaLista()">⬅ Voltar</button>
+          <button type="button" onclick="salvarDossie()">💾 Salvar</button>
+          <button type="button" onclick="gerarPDF()">🧾 Gerar PDF</button>
+          <button type="button" class="btn-perigo" id="btnExcluir" onclick="excluirDossieAtual()" style="display:none;">🗑 Excluir</button>
+        </div>
+      </div>
+      <div id="formContainer"></div>
+    </section>
+  </main>
+
+  <a href="home.html" class="voltar">⬅ Voltar ao Menu</a>
+
+  <div id="printArea"></div>
+
+  <script type="module" src="/js/dossies.js"></script>
+</body>
+
+</html>
