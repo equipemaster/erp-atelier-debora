@@ -448,6 +448,11 @@ const SCHEMAS = {
         ]
       },
       {
+        title: 'Inspiração', fields: [
+          { key: 'inspiracao', label: 'Imagens de Inspiração', type: 'images', max: 4 },
+        ]
+      },
+      {
         title: 'Medidas', fields: [
           { key: 'medidas', label: 'Medidas (cm)', type: 'measurements', items: ['Busto', 'Cintura', 'Quadril', 'Corpo Frente', 'Altura do Busto', 'Altura Saia com salto'] },
         ]
@@ -981,10 +986,20 @@ window.excluirDossieAtual = excluirDossieAtual;
 // ---------------------------------------------------------------------------
 // Geração de PDF (html2pdf.js)
 // ---------------------------------------------------------------------------
+function formatDateBR(value) {
+  if (!value) return '';
+  const [ano, mes, dia] = value.split('-');
+  if (!ano || !mes || !dia) return value;
+  return `${dia}/${mes}/${ano}`;
+}
+
 function printFieldHtml(field) {
   const value = currentData[field.key];
 
-  if (field.type === 'text' || field.type === 'date') {
+  if (field.type === 'date') {
+    return `<div><strong>${escapeHtml(field.label)}:</strong> ${escapeHtml(formatDateBR(value) || '—')}</div>`;
+  }
+  if (field.type === 'text') {
     return `<div><strong>${escapeHtml(field.label)}:</strong> ${escapeHtml(value || '—')}</div>`;
   }
   if (field.type === 'checkbox') {

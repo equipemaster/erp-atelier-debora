@@ -372,10 +372,15 @@
       background: #fff;
     }
 
+    /* Fontes do print-page usam px (não rem): rem sempre resolve contra o
+       <html> raiz, e css/style.css aumenta esse valor em telas de toque
+       (600–1366px), o que deixava o PDF com fontes desproporcionais ao
+       layout fixo de 210mm dependendo do dispositivo usado para gerá-lo. */
     .print-page {
       width: 210mm;
       padding: 12mm 14mm;
       font-family: 'Outfit', sans-serif;
+      font-size: 16px;
       color: #111;
       box-sizing: border-box;
     }
@@ -390,7 +395,7 @@
     }
 
     .print-header h1 {
-      font-size: 1.1rem;
+      font-size: 17.6px;
       margin: 0;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -401,7 +406,7 @@
 
     .print-brand {
       text-align: right;
-      font-size: 0.85rem;
+      font-size: 13.6px;
       font-weight: 700;
       letter-spacing: 2px;
     }
@@ -410,7 +415,7 @@
       display: block;
       font-weight: 400;
       letter-spacing: 3px;
-      font-size: 0.55rem;
+      font-size: 8.8px;
       color: #555;
     }
 
@@ -423,7 +428,7 @@
       background: #000;
       color: #fff;
       padding: 4px 10px;
-      font-size: 0.72rem;
+      font-size: 11.52px;
       text-transform: uppercase;
       letter-spacing: 1px;
       margin: 0 0 6px;
@@ -433,7 +438,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 3px 20px;
-      font-size: 0.72rem;
+      font-size: 11.52px;
     }
 
     .print-field-grid.full {
@@ -441,14 +446,14 @@
     }
 
     .print-checklist {
-      font-size: 0.72rem;
+      font-size: 11.52px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 2px 20px;
     }
 
     .print-measure {
-      font-size: 0.72rem;
+      font-size: 11.52px;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 3px 14px;
@@ -471,7 +476,7 @@
 
     .print-footer {
       margin-top: 20px;
-      font-size: 0.6rem;
+      font-size: 9.6px;
       color: #888;
       text-align: center;
       border-top: 1px solid #ddd;

@@ -51,10 +51,10 @@
                 <div class="header-title">
                     <span class="eyebrow">CRM</span>
                     <h1>Clientes</h1>
-                    <p>Relacionamento, medidas e histórico de cada cliente do ateliê.</p>
+                    <p>Ficha de atendimento, relacionamento e histórico de cada cliente do ateliê.</p>
                 </div>
                 <div class="header-actions">
-                    <button class="action-btn" onclick="openNewClient()">+ Novo Cliente</button>
+                    <button class="action-btn" onclick="openNewClient()">+ Nova Ficha de Atendimento</button>
                 </div>
             </header>
 
@@ -71,6 +71,7 @@
                             <option value="prova_agendada">Prova Agendada</option>
                             <option value="cliente_ativo">Cliente Ativo</option>
                             <option value="finalizado">Finalizado</option>
+                            <option value="perdida">Perdida</option>
                         </select>
                     </div>
                     <div id="client-list" class="client-list">
@@ -102,8 +103,28 @@
                                 </div>
                             </div>
                             <div class="client-actions">
-                                <button class="icon-btn" onclick="openEditClient()">Editar</button>
+                                <button class="icon-btn" onclick="openEditClient()">Continuar Ficha</button>
                                 <button class="icon-btn danger" onclick="deleteClient()">Excluir</button>
+                            </div>
+                        </div>
+
+                        <div class="info-group ficha-summary">
+                            <div class="info-group-header">
+                                <h3>Ficha de Atendimento</h3>
+                                <span id="view-resultado-badge" class="resultado-badge">Em andamento</span>
+                            </div>
+                            <div class="ficha-summary-grid">
+                                <div class="ficha-row"><strong>Casamento</strong><span id="view-data-casamento">-</span></div>
+                                <div class="ficha-row"><strong>Cidade do casamento</strong><span id="view-cidade-casamento">-</span></div>
+                                <div class="ficha-row"><strong>Instagram</strong><span id="view-instagram">-</span></div>
+                                <div class="ficha-row"><strong>Numeração</strong><span id="view-numeracao">-</span></div>
+                                <div class="ficha-row"><strong>Indicação</strong><span id="view-indicacao">-</span></div>
+                                <div class="ficha-row"><strong>O que procura</strong><span id="view-procura">-</span></div>
+                                <div class="ficha-row"><strong>Faixa de investimento</strong><span id="view-faixa">-</span></div>
+                                <div class="ficha-row"><strong>Quem decide</strong><span id="view-quem-decide">-</span></div>
+                                <div class="ficha-row"><strong>Modelo escolhido</strong><span id="view-modelo-escolhido">-</span></div>
+                                <div class="ficha-row"><strong>Valor / condição</strong><span id="view-valor-proposta">-</span></div>
+                                <div class="ficha-row"><strong>Próxima ação</strong><span id="view-proxima-acao">-</span></div>
                             </div>
                         </div>
 
@@ -168,54 +189,340 @@
 
     <!-- Modals -->
 
-    <!-- Modal Client (Create/Edit) -->
+    <!-- Modal Ficha de Atendimento Comercial — Noivas (Create/Edit) -->
     <div id="modal-client" class="modal-overlay">
-        <div class="modal-content">
-            <h2 id="modal-title-client" class="modal-title">Novo Cliente</h2>
+        <div class="modal-content modal-content-lg">
+            <h2 id="modal-title-client" class="modal-title">Ficha de Atendimento — Nova Cliente</h2>
+            <p class="ficha-subtitle">Preencha o que for possível a cada etapa do atendimento. Dá para salvar agora e
+                continuar depois, na prova ou no retorno.</p>
             <form id="form-client" onsubmit="saveClient(event)">
-                <input type="hidden" id="client-id">
+                <input type="hidden" id="fa-id">
 
-                <label>Nome Completo *</label>
-                <input type="text" id="client-nome" required>
+                <!-- ETAPA 1 -->
+                <h3 class="ficha-section-title">Etapa 1 — Cadastro / Recepção</h3>
+
+                <label>Nome completo *</label>
+                <input type="text" id="fa-nome" required>
 
                 <div class="form-row-2">
                     <div>
-                        <label>Telefone</label>
-                        <input type="tel" id="client-telefone">
+                        <label>WhatsApp</label>
+                        <input type="tel" id="fa-whatsapp">
+                    </div>
+                    <div>
+                        <label>Instagram</label>
+                        <input type="text" id="fa-instagram" placeholder="@usuario">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div>
+                        <label>Data do atendimento</label>
+                        <input type="date" id="fa-data-atendimento">
+                    </div>
+                    <div>
+                        <label>Data do casamento</label>
+                        <input type="date" id="fa-data-casamento">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div>
+                        <label>Cidade do casamento</label>
+                        <input type="text" id="fa-cidade-casamento">
+                    </div>
+                    <div>
+                        <label>Numeração aproximada</label>
+                        <input type="text" id="fa-numeracao">
+                    </div>
+                </div>
+
+                <p class="ficha-question">Quem indicou o Ateliê Débora Freitas?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="casarei_natalia">
+                        Casarei by Natália</label>
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="rbc"> RBC</label>
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="cerimonial">
+                        Cerimonial</label>
+                    <input type="text" id="fa-indicacao-cerimonial-qual" class="ficha-conditional"
+                        style="display:none" placeholder="Qual cerimonial?">
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="instagram">
+                        Instagram</label>
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="tiktok"> TikTok</label>
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="pinterest">
+                        Pinterest</label>
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="google"> Google</label>
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="indicacao_cliente">
+                        Indicação de cliente/amiga</label>
+                    <input type="text" id="fa-indicacao-cliente-quem" class="ficha-conditional" style="display:none"
+                        placeholder="Quem indicou?">
+                    <label class="ficha-option"><input type="radio" name="fa-indicacao" value="outro"> Outro</label>
+                    <input type="text" id="fa-indicacao-outro-texto" class="ficha-conditional" style="display:none"
+                        placeholder="Qual?">
+                </div>
+
+                <label>Como conheceu nosso trabalho?</label>
+                <input type="text" id="fa-como-conheceu">
+
+                <!-- ETAPA 2 -->
+                <h3 class="ficha-section-title">Etapa 2 — Diagnóstico da Noiva</h3>
+
+                <p class="ficha-question">1. Já experimentou vestidos em outros lugares ou esse é o primeiro
+                    atendimento?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-ja-experimentou" value="primeiro">
+                        Primeiro atendimento</label>
+                    <label class="ficha-option"><input type="radio" name="fa-ja-experimentou" value="outros"> Já
+                        visitou outros ateliês</label>
+                </div>
+
+                <label>2. Teve algum vestido que chegou perto de ser "o vestido"? O que fez não fechar?</label>
+                <textarea id="fa-vestido-quase-fechou" rows="2"></textarea>
+
+                <p class="ficha-question">3. Hoje está mais na fase de conhecer opções ou, se encontrar o vestido
+                    certo, está aberta a decidir?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-fase-decisao" value="conhecendo">
+                        Conhecendo/pesquisando</label>
+                    <label class="ficha-option"><input type="radio" name="fa-fase-decisao" value="decisao"> Em fase
+                        de decisão</label>
+                    <label class="ficha-option"><input type="radio" name="fa-fase-decisao" value="fechar"> Aberta a
+                        fechar hoje</label>
+                </div>
+
+                <p class="ficha-question">4. O que ela procura?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-o-que-procura" value="locacao">
+                        Locação de vestido pronto</label>
+                    <label class="ficha-option"><input type="radio" name="fa-o-que-procura" value="primeiro_aluguel">
+                        Primeiro aluguel / projeto exclusivo</label>
+                    <label class="ficha-option"><input type="radio" name="fa-o-que-procura" value="sob_medida"> Sob
+                        medida</label>
+                    <label class="ficha-option"><input type="radio" name="fa-o-que-procura" value="nao_sabe"> Ainda
+                        não sabe</label>
+                </div>
+
+                <p class="ficha-question">5. Qual faixa de investimento foi planejada para o vestido?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento" value="ate_4000">
+                        Até R$4.000</label>
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento" value="4000_6000">
+                        R$4.000–R$6.000</label>
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento" value="6000_8000">
+                        R$6.000–R$8.000</label>
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento" value="8000_10000">
+                        R$8.000–R$10.000</label>
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento" value="10000_15000">
+                        R$10.000–R$15.000</label>
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento" value="acima_15000">
+                        Acima de R$15.000</label>
+                    <label class="ficha-option"><input type="radio" name="fa-faixa-investimento"
+                            value="prefere_nao_informar"> Prefere não informar</label>
+                </div>
+
+                <p class="ficha-question">6. Quem participa da decisão do vestido?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="checkbox" name="fa-quem-decide" value="noiva"> Somente
+                        a noiva</label>
+                    <label class="ficha-option"><input type="checkbox" name="fa-quem-decide" value="mae"> Mãe</label>
+                    <label class="ficha-option"><input type="checkbox" name="fa-quem-decide" value="pai"> Pai</label>
+                    <label class="ficha-option"><input type="checkbox" name="fa-quem-decide" value="noivo">
+                        Noivo(a)</label>
+                    <label class="ficha-option"><input type="checkbox" name="fa-quem-decide" value="avo">
+                        Avó/avô</label>
+                    <label class="ficha-option"><input type="checkbox" name="fa-quem-decide" value="outra"> Outra
+                        pessoa</label>
+                    <input type="text" id="fa-quem-decide-outra-texto" class="ficha-conditional" style="display:none"
+                        placeholder="Quem?">
+                </div>
+
+                <!-- ETAPA 3 -->
+                <h3 class="ficha-section-title">Etapa 3 — Durante a Prova</h3>
+
+                <label>Modelos experimentados</label>
+                <div class="form-row-2">
+                    <input type="text" id="fa-modelo-1" placeholder="Modelo 1">
+                    <input type="text" id="fa-modelo-2" placeholder="Modelo 2">
+                </div>
+                <div class="form-row-2" style="margin-top:8px;">
+                    <input type="text" id="fa-modelo-3" placeholder="Modelo 3">
+                    <input type="text" id="fa-modelo-4" placeholder="Modelo 4">
+                </div>
+
+                <label>Modelo favorito</label>
+                <input type="text" id="fa-modelo-favorito">
+
+                <label>7. De todos que ela experimentou hoje, qual mais mexeu com ela?</label>
+                <textarea id="fa-pergunta-mexeu" rows="2"></textarea>
+
+                <label>8. O que fez ela gostar dele? Existe algo que ela mudaria?</label>
+                <textarea id="fa-pergunta-gostou" rows="2"></textarea>
+
+                <p class="ficha-question">9. Se o investimento estiver dentro do planejado, esse é um vestido que ela
+                    se sentiria segura em escolher?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-seguranca-escolha" value="sim">
+                        Sim</label>
+                    <label class="ficha-option"><input type="radio" name="fa-seguranca-escolha" value="talvez">
+                        Talvez</label>
+                    <label class="ficha-option"><input type="radio" name="fa-seguranca-escolha" value="nao">
+                        Não</label>
+                </div>
+
+                <!-- ETAPA 4 -->
+                <h3 class="ficha-section-title">Etapa 4 — Proposta</h3>
+
+                <label>Modelo/projeto escolhido</label>
+                <input type="text" id="fa-proposta-modelo">
+
+                <div class="form-row-2">
+                    <div>
+                        <label>Valor oficial (R$)</label>
+                        <input type="text" id="fa-proposta-valor-oficial">
+                    </div>
+                    <div>
+                        <label>Condição apresentada (R$)</label>
+                        <input type="text" id="fa-proposta-condicao">
+                    </div>
+                </div>
+
+                <label>Forma de pagamento</label>
+                <input type="text" id="fa-proposta-pagamento">
+
+                <label>O que está incluso</label>
+                <textarea id="fa-proposta-incluso" rows="2"></textarea>
+
+                <label>Validade da condição, se houver</label>
+                <input type="text" id="fa-proposta-validade">
+
+                <p class="ficha-note">⚠️ Regra interna: não oferecer desconto antes de identificar a objeção.</p>
+
+                <!-- ETAPA 5 -->
+                <h3 class="ficha-section-title">Etapa 5 — Se Não Fechar</h3>
+
+                <p class="ficha-question">10. O que hoje está impedindo a decisão?</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento"
+                            value="investimento"> Investimento</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento"
+                            value="forma_pagamento"> Forma de pagamento</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento"
+                            value="pesquisar_outros"> Ainda quer pesquisar outros ateliês</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento"
+                            value="nao_encontrou_modelo"> Não encontrou o modelo ideal</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento"
+                            value="precisa_conversar"> Precisa conversar com quem participa da decisão</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento"
+                            value="casamento_distante"> Casamento ainda está distante</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento" value="prazo">
+                        Prazo</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento" value="nao_segura">
+                        Não se sentiu segura para decidir</label>
+                    <label class="ficha-option"><input type="radio" name="fa-motivo-impedimento" value="outro">
+                        Outro</label>
+                    <input type="text" id="fa-motivo-impedimento-outro-texto" class="ficha-conditional"
+                        style="display:none" placeholder="Qual?">
+                </div>
+
+                <label>Observação da estilista</label>
+                <textarea id="fa-obs-estilista" rows="2"></textarea>
+
+                <label>Se for investimento: qual condição faria esse projeto caber de forma confortável?</label>
+                <textarea id="fa-condicao-ideal" rows="2"></textarea>
+
+                <!-- ETAPA 6 -->
+                <h3 class="ficha-section-title">Etapa 6 — Resultado do Atendimento</h3>
+
+                <p class="ficha-question">Status</p>
+                <div class="ficha-options">
+                    <label class="ficha-option"><input type="radio" name="fa-status-atendimento" value="fechou">
+                        Fechou</label>
+                    <label class="ficha-option"><input type="radio" name="fa-status-atendimento" value="em_decisao">
+                        Em decisão</label>
+                    <label class="ficha-option"><input type="radio" name="fa-status-atendimento"
+                            value="retorno_agendado"> Retorno agendado</label>
+                    <label class="ficha-option"><input type="radio" name="fa-status-atendimento" value="follow_up">
+                        Follow-up</label>
+                    <label class="ficha-option"><input type="radio" name="fa-status-atendimento" value="perdida">
+                        Perdida</label>
+                </div>
+
+                <div id="fa-bloco-fechou" class="ficha-conditional-block" style="display:none">
+                    <label>Valor do contrato (R$)</label>
+                    <input type="text" id="fa-valor-contrato">
+                    <p class="ficha-question">Categoria</p>
+                    <div class="ficha-options">
+                        <label class="ficha-option"><input type="radio" name="fa-categoria-fechou" value="acervo">
+                            Acervo</label>
+                        <label class="ficha-option"><input type="radio" name="fa-categoria-fechou"
+                                value="primeiro_aluguel"> Primeiro aluguel</label>
+                        <label class="ficha-option"><input type="radio" name="fa-categoria-fechou"
+                                value="sob_medida"> Sob medida</label>
+                    </div>
+                </div>
+
+                <div id="fa-bloco-nao-fechou" class="ficha-conditional-block" style="display:none">
+                    <label>Motivo principal</label>
+                    <input type="text" id="fa-motivo-principal">
+                    <label>Próxima ação</label>
+                    <input type="text" id="fa-proxima-acao">
+                    <label>Data do próximo contato</label>
+                    <input type="date" id="fa-data-proximo-contato">
+                </div>
+
+                <div id="fa-bloco-perdida" class="ficha-conditional-block" style="display:none">
+                    <p class="ficha-question">Motivo da perda</p>
+                    <div class="ficha-options">
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida" value="concorrente">
+                            Fechou com concorrente</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida" value="preco">
+                            Preço</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida" value="modelo">
+                            Modelo</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida"
+                                value="forma_pagamento"> Forma de pagamento</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida"
+                                value="familia_decisor"> Família/decisor</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida" value="adiou">
+                            Adiou casamento/compra</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida"
+                                value="nao_respondeu"> Não respondeu</label>
+                        <label class="ficha-option"><input type="radio" name="fa-motivo-perdida" value="outro">
+                            Outro</label>
+                        <input type="text" id="fa-motivo-perdida-outro-texto" class="ficha-conditional"
+                            style="display:none" placeholder="Qual?">
+                    </div>
+                </div>
+
+                <!-- DADOS ADICIONAIS -->
+                <h3 class="ficha-section-title">Dados Adicionais</h3>
+
+                <div class="form-row-2">
+                    <div>
+                        <label>Email</label>
+                        <input type="email" id="fa-email">
                     </div>
                     <div>
                         <label>CPF</label>
-                        <input type="text" id="client-cpf">
+                        <input type="text" id="fa-cpf">
                     </div>
                 </div>
 
-                <label>Email</label>
-                <input type="email" id="client-email">
-
-                <label>Status</label>
-                <select id="client-status">
-                    <option value="novo_lead">Novo Lead</option>
-                    <option value="em_conversa">Em Conversa</option>
-                    <option value="prova_agendada">Prova Agendada</option>
-                    <option value="cliente_ativo">Cliente Ativo</option>
-                    <option value="finalizado">Finalizado</option>
-                </select>
-
-                <label class="form-section-label">Medidas (opcional)</label>
+                <label class="form-section-label">Medidas (cm, opcional)</label>
                 <div class="form-row-5">
-                    <input type="number" id="medida-busto" placeholder="Busto">
-                    <input type="number" id="medida-cintura" placeholder="Cintura">
-                    <input type="number" id="medida-quadril" placeholder="Quadril">
-                    <input type="number" id="medida-altura" placeholder="Altura">
-                    <input type="number" id="medida-ombro" placeholder="Ombro">
+                    <input type="number" id="fa-medida-busto" placeholder="Busto">
+                    <input type="number" id="fa-medida-cintura" placeholder="Cintura">
+                    <input type="number" id="fa-medida-quadril" placeholder="Quadril">
+                    <input type="number" id="fa-medida-altura" placeholder="Altura">
+                    <input type="number" id="fa-medida-ombro" placeholder="Ombro">
                 </div>
 
-                <label>Observações</label>
-                <textarea id="client-obs" rows="3"></textarea>
+                <label>Observações gerais</label>
+                <textarea id="fa-observacoes" rows="3"></textarea>
 
                 <div class="form-actions">
                     <button type="button" class="btn-ghost" onclick="closeModal('modal-client')">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="submit" class="btn-primary">Salvar Ficha</button>
                 </div>
             </form>
         </div>
